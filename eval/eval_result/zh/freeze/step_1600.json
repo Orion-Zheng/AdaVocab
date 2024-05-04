@@ -1,0 +1,101 @@
+{
+  "results": {
+    "xwinograd_zh": {
+      "acc,none": 0.6190476190476191,
+      "acc_stderr,none": 0.02165276599299266,
+      "alias": "xwinograd_zh"
+    },
+    "xnli_zh": {
+      "acc,none": 0.3289156626506024,
+      "acc_stderr,none": 0.009417125981806735,
+      "alias": "xnli_zh"
+    }
+  },
+  "group_subtasks": {
+    "xnli_zh": [],
+    "xwinograd_zh": []
+  },
+  "configs": {
+    "xnli_zh": {
+      "task": "xnli_zh",
+      "group": "xnli",
+      "dataset_path": "xnli",
+      "dataset_name": "zh",
+      "training_split": "train",
+      "validation_split": "validation",
+      "doc_to_text": "",
+      "doc_to_target": "label",
+      "doc_to_choice": "{{[premise+\", 正确? 是的, \"+hypothesis,premise+\", 正确? 所以, \"+hypothesis,premise+\", 正确? 不是的, \"+hypothesis]}}",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "acc",
+          "aggregation": "mean",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "multiple_choice",
+      "repeats": 1,
+      "should_decontaminate": false,
+      "metadata": {
+        "version": 1.0
+      }
+    },
+    "xwinograd_zh": {
+      "task": "xwinograd_zh",
+      "group": [
+        "xwinograd"
+      ],
+      "dataset_path": "Muennighoff/xwinograd",
+      "dataset_name": "zh",
+      "test_split": "test",
+      "doc_to_text": "def doc_to_text(doc: Dict) -> int:\n    \"\"\"\n    Return index of the correct choice.\n\n    Note: We are using the \"multiple input\" mode of the multiple-choice\n        output-type, which means we use different contexts with the same target\n        for the different choices, rather than the same context and different targets.\n    \"\"\"\n    answer_to_num = {\"1\": 0, \"2\": 1}\n    return answer_to_num[doc[\"answer\"]]\n",
+      "doc_to_target": "def doc_to_target(doc: Dict) -> str:\n    \"\"\"\n    Return the target completion.\n\n    Note that this does not depend on the correct choice as we are using\n    \"multiple input\" mode.\n    \"\"\"\n    idx = doc[\"sentence\"].index(\"_\") + 1\n    return doc[\"sentence\"][idx:].strip()\n",
+      "doc_to_choice": "def doc_to_choice(doc: Dict) -> List[str]:\n    \"\"\"Return the choices that will be used as contexts in \"multiple input\" mode.\"\"\"\n    idx = doc[\"sentence\"].index(\"_\")\n    options = [doc[\"option1\"], doc[\"option2\"]]\n    return [doc[\"sentence\"][:idx] + opt for opt in options]\n",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "acc",
+          "aggregation": "mean",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "multiple_choice",
+      "repeats": 1,
+      "should_decontaminate": false,
+      "metadata": {
+        "version": 1.0
+      }
+    }
+  },
+  "versions": {
+    "xnli_zh": 1.0,
+    "xwinograd_zh": 1.0
+  },
+  "n-shot": {
+    "xnli_zh": 0,
+    "xwinograd_zh": 0
+  },
+  "config": {
+    "model": "hf",
+    "model_args": "pretrained=experiment_ckpts/tinyllama_expanded_frez_embed-2024-04-16-223017/checkpoint-1600",
+    "batch_size": "64",
+    "batch_sizes": [],
+    "device": "cuda:0",
+    "use_cache": null,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": null
+  },
+  "git_hash": "8a7199c",
+  "date": 1713435926.3900619,
+  "pretty_env_info": "PyTorch version: 2.2.0\nIs debug build: False\nCUDA used to build PyTorch: 12.1\nROCM used to build PyTorch: N/A\n\nOS: Red Hat Enterprise Linux release 8.4 (Ootpa) (x86_64)\nGCC version: (GCC) 8.4.1 20200928 (Red Hat 8.4.1-1)\nClang version: Could not collect\nCMake version: version 3.18.2\nLibc version: glibc-2.28\n\nPython version: 3.10.13 (main, Sep 11 2023, 13:44:35) [GCC 11.2.0] (64-bit runtime)\nPython platform: Linux-4.18.0-305.25.1.el8_4.x86_64-x86_64-with-glibc2.28\nIs CUDA available: True\nCUDA runtime version: 12.2.140\nCUDA_MODULE_LOADING set to: LAZY\nGPU models and configuration: GPU 0: NVIDIA A100-SXM4-40GB\nNvidia driver version: 535.154.05\ncuDNN version: Could not collect\nHIP runtime version: N/A\nMIOpen runtime version: N/A\nIs XNNPACK available: True\n\nCPU:\nArchitecture:        x86_64\nCPU op-mode(s):      32-bit, 64-bit\nByte Order:          Little Endian\nCPU(s):              128\nOn-line CPU(s) list: 0-127\nThread(s) per core:  2\nCore(s) per socket:  64\nSocket(s):           1\nNUMA node(s):        4\nVendor ID:           AuthenticAMD\nCPU family:          25\nModel:               1\nModel name:          AMD EPYC 7713 64-Core Processor\nStepping:            1\nCPU MHz:             2995.050\nCPU max MHz:         2000.0000\nCPU min MHz:         1500.0000\nBogoMIPS:            3992.20\nVirtualization:      AMD-V\nL1d cache:           32K\nL1i cache:           32K\nL2 cache:            512K\nL3 cache:            32768K\nNUMA node0 CPU(s):   0-15,64-79\nNUMA node1 CPU(s):   16-31,80-95\nNUMA node2 CPU(s):   32-47,96-111\nNUMA node3 CPU(s):   48-63,112-127\nFlags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 invpcid_single hw_pstate sme ssbd mba sev ibrs ibpb stibp vmmcall sev_es fsgsbase bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr wbnoinvd amd_ppin arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca fsrm\n\nVersions of relevant libraries:\n[pip3] numpy==1.26.4\n[pip3] torch==2.2.0\n[pip3] torchaudio==2.2.0\n[pip3] torchvision==0.17.0\n[pip3] triton==2.2.0\n[conda] blas                      1.0                         mkl  \n[conda] ffmpeg                    4.3                  hf484d3e_0    pytorch\n[conda] libjpeg-turbo             2.0.0                h9bf148f_0    pytorch\n[conda] mkl                       2023.1.0         h213fc3f_46344  \n[conda] mkl-service               2.4.0           py310h5eee18b_1  \n[conda] mkl_fft                   1.3.8           py310h5eee18b_0  \n[conda] mkl_random                1.2.4           py310hdb19cb5_0  \n[conda] numpy                     1.26.4          py310h5f9d8c6_0  \n[conda] numpy-base                1.26.4          py310hb5e798b_0  \n[conda] pytorch                   2.2.0           py3.10_cuda12.1_cudnn8.9.2_0    pytorch\n[conda] pytorch-cuda              12.1                 ha16c6d3_5    pytorch\n[conda] pytorch-mutex             1.0                        cuda    pytorch\n[conda] torchaudio                2.2.0               py310_cu121    pytorch\n[conda] torchtriton               2.2.0                     py310    pytorch\n[conda] torchvision               0.17.0              py310_cu121    pytorch",
+  "transformers_version": "4.37.2",
+  "upper_git_hash": null
+}

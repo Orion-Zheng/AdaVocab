@@ -1,0 +1,7 @@
+experiment_*/
+original_datasets/
+tokenized_datasets/
+wandb/
+dist_log/
+.deepspeed_env
+lm-evaluation-harness/
