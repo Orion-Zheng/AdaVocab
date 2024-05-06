@@ -9,7 +9,7 @@
 #SBATCH --gpus-per-node=a100-80:1
 #SBATCH --mail-user=reflectionie@gmail.com
 #SBATCH --mail-type=all    # Send email at begin and end of job
-# source ~/.bashrc
+source ~/.bashrc
 conda activate base
 nvidia-smi
 python ../launch_tunnel.py --type soc_gpu

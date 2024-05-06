@@ -21,9 +21,9 @@ child = pexpect.spawn(f'{command_path} tunnel --accept-server-license-terms --na
 child.logfile = sys.stdout  # direct the command output to std output 
 
 try:
-    # Match the `Github Account` 
-    child.expect('Github Account', timeout=30)
-    # Press the downward arrow and Enter button
+    # Match the `How would you like to log in to Visual Studio Code` 
+    child.expect('How would you like to log in to Visual Studio Code', timeout=30)
+    # Press the downward arrow and Enter button to select login with Github Account
     child.sendline('\033[B\r')
     # Monitoring the 
     while True:

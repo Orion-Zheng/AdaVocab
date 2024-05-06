@@ -13,4 +13,4 @@ source ~/.bashrc
 cd $PBS_O_WORKDIR
 RUNTIME_NAME="nscc_cpu"
 OUTPUT_PATH="${PBS_O_WORKDIR}/${RUNTIME_NAME}_tunnel.out"
-python launch_tunnel.py --type $RUNTIME_NAME > $OUTPUT_PATH 2>&1
+python ../launch_tunnel.py --type $RUNTIME_NAME > $OUTPUT_PATH 2>&1

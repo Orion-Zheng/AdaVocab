@@ -10,4 +10,4 @@
 #SBATCH --mail-user=zheng_zian@u.nus.edu
 #SBATCH --mail-type=all    # Send email at begin and end of job
 source ~/.bashrc
-python launch_tunnel.py --type soc_cpu
+python ../launch_tunnel.py --type soc_cpu
