@@ -102,7 +102,7 @@ class ModelArgs():
     do_train: Optional[bool] = None
     do_eval: Optional[bool] = None
     resume_from_checkpoint: Optional[str] = None  # the path to model checkpoint
-    freeze_embed: Optional[bool] = None  # freeze output and embed layer
+    freeze_non_embed: Optional[bool] = None  # freeze output and embed layer
     max_length: Optional[int] = None
     
 

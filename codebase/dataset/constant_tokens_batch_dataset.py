@@ -1,8 +1,7 @@
 import warnings
 import random
 import torch
-from torch.utils.data import IterableDataset
-from datasets import load_from_disk, Dataset
+from datasets import load_from_disk, Dataset, IterableDataset
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union, Sequence
@@ -51,9 +50,9 @@ class ConstantTokenLengthDataset(IterableDataset):
         self.wrap_special_token_func = wrap_special_token_func
         self.shuffle = shuffle  # 这个真的不会影响性能吗？从curriculum的角度来讲，连续的内容应该连着学才对，打乱也应该在Dataset Example层面打乱，不应该在token之后的层面shuffle
 
-    # def __len__(self):
-    #     # TODO: count real length
-    #     return len(self.dataset)
+    def __len__(self):
+        # TODO: count real length
+        return len(self.dataset)
 
     def __iter__(self):
         iterator = iter(self.dataset)

@@ -1,15 +1,21 @@
+import argparse
 import warnings
 import random
 import torch
-from torch.utils.data import IterableDataset
-from datasets import load_from_disk, Dataset
+from datasets import load_from_disk, Dataset, IterableDataset
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union, Sequence
 from functools import partial
+from typing import Iterable, Dict
+
 
 def gen_from_iterable_dataset(iterable_ds):
     yield from iterable_ds
+
+def create_data_generator(dataset: Iterable) -> Iterable[Dict[str, torch.Tensor]]:
+    for data in dataset:
+        yield data
 
 @dataclass
 class ConstantTokensCollator(object):
@@ -91,9 +97,8 @@ class ConstantTokenLengthDataset(IterableDataset):
                     "labels": torch.LongTensor(example),
                 }
 
-
-if __name__ == "__main__":
-    tokenizer_path = "base_models/colossal_llama_2_7b"
+def test():
+    tokenizer_path = "original_models/tinyllama-chat"
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     dataset = Dataset.from_dict({"tokens": [[11]*13, [22]*15, [33]*5, [44]*13, [55]*5]})
     wrap_data_func = lambda input_ids: [tokenizer.bos_token_id] + input_ids + [tokenizer.eos_token_id]
@@ -110,7 +115,35 @@ if __name__ == "__main__":
         if idx >= 10:
             break
 
-    dataset = Dataset.from_generator(partial(gen_from_iterable_dataset,
-                                             const_dataset), num_proc=10)
+    dataset = Dataset.from_generator(partial(gen_from_iterable_dataset, const_dataset),
+                                     num_proc=1)
     dataset.save_to_disk('test_dataset')
+
+def main(args):
+    tokenizer_path = args.tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+    dataset = load_from_disk(args.source_dir)
+    wrap_data_func = lambda input_ids: [tokenizer.bos_token_id] + input_ids + [tokenizer.eos_token_id]
+    const_dataset = ConstantTokenLengthDataset(
+                        dataset, 
+                        dataset_token_field=args.token_field,
+                        seq_num_token=args.seq_num_token,
+                        buffer_sequences=args.buffer_size,
+                        wrap_special_token=True,
+                        wrap_special_token_func=wrap_data_func,
+                    )
+    dataset = Dataset.from_generator(partial(gen_from_iterable_dataset, const_dataset),
+                                     num_proc=1)
+    dataset.save_to_disk(args.output_dir)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Packing Given Dataset to Constant Length')
+    parser.add_argument('--tokenizer', type=str, required=True, help="Path to Hugging Face's Model Repo/Local Tokenizer")
+    parser.add_argument('--token_field', type=str, default="input_ids", help="Columns in the dataset that contains tokenized data")
+    parser.add_argument('--seq_num_token', type=int, default=2048, help="Number of tokens in each example")
+    parser.add_argument('--buffer_size', type=int, default=128, help="Number of examples in buffer when packing")
+    parser.add_argument('--source_dir', type=str, required=True, help='Local directory to the source raw dataset')
+    parser.add_argument('--output_dir', type=str, default='./tokenized_datasets', help='Output directory for tokenized dataset')
+    args = parser.parse_args()
+    main(args)
     

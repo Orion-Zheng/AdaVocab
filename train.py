@@ -4,7 +4,11 @@ import math
 import torch
 import numpy as np
 import random
-from transformers import Trainer, AutoModelForCausalLM, PreTrainedTokenizer, DataCollatorForLanguageModeling, AutoConfig, TrainerCallback
+from transformers import (Trainer, AutoModelForCausalLM,
+                          PreTrainedTokenizer,
+                          DataCollatorForLanguageModeling,
+                          AutoConfig, TrainerCallback,
+                          LlamaForCausalLM)
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from datasets import load_dataset, load_from_disk
 from accelerate import Accelerator, init_empty_weights
@@ -27,7 +31,7 @@ os.environ['WANDB_LOG_MODEL'] = 'true'
 IGNORE_INDEX = -100
 SAFE_MINUTES = 5
 
-class SafeSavingCallback(TrainerCallback):
+class SafeSavingCallback_PBS(TrainerCallback):
     safe_minutes = SAFE_MINUTES
     def __init__(self):
         self.end_time = get_expect_end_time()
@@ -119,7 +123,7 @@ def main():
         eval_dataset=eval_data, 
         args=trainer_config,
         data_collator=PaddToMaxLenCollator(tokenizer, model_args.max_length), 
-        callbacks=[SafeSavingCallback]
+        # callbacks=[SafeSavingCallback_PBS]  # only for PBS Pro Cluster(e.g. NSCC)
     )
 
     # Training

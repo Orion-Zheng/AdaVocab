@@ -22,7 +22,7 @@ child.logfile = sys.stdout  # direct the command output to std output
 
 try:
     # Match the `Github Account` 
-    child.expect('Github Account', timeout=10)
+    child.expect('Github Account', timeout=30)
     # Press the downward arrow and Enter button
     child.sendline('\033[B\r')
     # Monitoring the 

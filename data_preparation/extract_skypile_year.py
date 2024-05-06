@@ -7,8 +7,8 @@ if __name__ == "__main__":
     num_proc = cpu_count() - 2
     print(f"original_datasets/SkyPile-150B/{year}-*.jsonl")
     dataset = load_dataset("json", 
-                                data_files=f"original_datasets/SkyPile-150B/{year}-*.jsonl",
-                                cache_dir="./cache_dir",
-                                num_proc=num_proc)
+                            data_files=f"original_datasets/SkyPile-150B/{year}-*.jsonl",
+                            cache_dir="./cache_dir",
+                            num_proc=num_proc)
     dataset.save_to_disk(f'./original_datasets/skypile_{year}',
                               num_proc=num_proc)

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     num_proc = cpu_count() - 3
     tokenizer_path = "experiment_models/tinyllama_expanded_empty"
     dataset_path = "original_datasets/skypile_2022_sampled_50M"
-    output_dir = f"tokenized_datasets/skypile_2022_sampled_50M_{max_len}_colossal_ft"
+    output_dir = f"tokenized_datasets/skypile_2022_sampled_50M_{max_len}_ft"
     dataset = load_from_disk(dataset_path)
     
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)

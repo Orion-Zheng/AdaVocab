@@ -28,7 +28,7 @@ python codebase/args_parser.py --run_name test_run \
                       --use_flash True \
                       --do_train True \
                       --bf16 True \
-                      --freeze_embed True
+                      --freeze_non_embed True
 
 python codebase/args_parser.py --run_name test_run \
                       --model_dir ./PATH_TO_MODEL \
@@ -58,4 +58,4 @@ python codebase/args_parser.py --run_name test_run \
                       --use_flash True \
                       --do_train True \
                       --bf16 True \
-                      --freeze_embed False
+                      --freeze_non_embed False

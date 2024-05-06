@@ -4,7 +4,7 @@
 #SBATCH -p long        # Queue (partition) name
 #SBATCH -N 2               # Total # of nodes (must be 1 for serial)
 #SBATCH -n 2               # Total # of mpi tasks (should be 1 for serial)
-#SBATCH -t 96:00:00        # Run time (hh:mm:ss)
+#SBATCH -t 24:00:00        # Run time (hh:mm:ss)
 #SBATCH --gpus-per-node=4
 #SBATCH --mem=100000MB	   # min mem per node
 #SBATCH --mincpus=20       # min cpu per node

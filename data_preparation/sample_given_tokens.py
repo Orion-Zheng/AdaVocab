@@ -5,12 +5,11 @@ from multiprocessing import cpu_count
 import numpy as np
 from typing import Tuple
 import math
-
-def tokenize_function(example):
+def tokenize_function(example, tokenizer):
     tokens = tokenizer(example['text'], add_special_tokens=False)['input_ids']
     return {'tokens': tokens}
 
-def count_dataset(dataset:Dataset, max_token:int, num_proc: int=1)->Tuple[Dataset, int]:
+def count_dataset(dataset:Dataset, max_token:int, tokenizer, num_proc: int=1)->Tuple[Dataset, int]:
     # Input:
     # - dataset: containing key 'text'
     # - max_token: max tokens to be sampled
@@ -19,7 +18,8 @@ def count_dataset(dataset:Dataset, max_token:int, num_proc: int=1)->Tuple[Datase
     # - sampled_tokens: tokens in sampled_dataset
     total_token_count = 0
     selected_indices = []
-    dataset = dataset.map(tokenize_function, num_proc=num_proc,
+    tokenize_func = lambda x: tokenize_function(x, tokenizer)
+    dataset = dataset.map(tokenize_func, num_proc=num_proc, 
                           # batched=True, batch_size=10
                           )
     selected_indices = []
@@ -32,7 +32,7 @@ def count_dataset(dataset:Dataset, max_token:int, num_proc: int=1)->Tuple[Datase
 
     return dataset.select(selected_indices), total_token_count
 
-def sample_once(dataset, max_token, start_idx, estim_sample_num, curr_token, num_proc: int=1):
+def sample_once(dataset, max_token, start_idx, estim_sample_num, curr_token, tokenizer, num_proc: int=1):
     # Output: sampled_ds, end_idx, curr_token, remain_token,
     assert start_idx < len(dataset)
     end_idx = start_idx + estim_sample_num
@@ -42,18 +42,18 @@ def sample_once(dataset, max_token, start_idx, estim_sample_num, curr_token, num
     estim_ds = dataset.select(range(start_idx, end_idx))
     remain_token = max_token - curr_token
     # Try to get samples containing `remain_token` from `estim_ds`, but won't exceed `remain_token` too much
-    new_ds, new_token = count_dataset(estim_ds, remain_token, num_proc=num_proc)
+    new_ds, new_token = count_dataset(estim_ds, remain_token, tokenizer, num_proc=num_proc)
     start_idx += len(new_ds)
     curr_token += new_token
     remain_token = max_token - curr_token
     return new_ds, start_idx, curr_token, remain_token
 
-if __name__ == "__main__":
+def main():
     tokenizer_path = "base_models/colossal_llama_2_7b"
     dataset_path = "original_datasets/skypile_2022"
     max_token = 5e9
     probe_len = 100
-    num_proc = cpu_count() - 2
+    num_proc = cpu_count() // 2
     seed = 24
 
     print("Loading Tokenizer ...")
@@ -64,14 +64,15 @@ if __name__ == "__main__":
     ds_shuffled = dataset.shuffle(seed=seed).select_columns(['text'])
 
     result_ds = Dataset.from_dict({"text": [],
-                                    "tokens": []})
+                                   "tokens": []})
 
     print(f'Tokenizing first {probe_len} samples to estimate `tokens per sample`...')
     start_idx = 0
     curr_token = 0
     estim_sample_num = None
     sampled_ds, start_idx, curr_token, remain_token = sample_once(ds_shuffled, max_token,
-                                                                start_idx, probe_len, curr_token, num_proc)
+                                                                  start_idx, probe_len, 
+                                                                  curr_token, tokenizer, num_proc)
     result_ds = concatenate_datasets([result_ds, sampled_ds])
     print('The estimation finished.')
 
@@ -84,8 +85,8 @@ if __name__ == "__main__":
         print(f"Estimated `tokens per sample` = {token_per_sample:.2f}.")
         print(f"Approximate {estim_sample_num} samples are needed for {(max_token/1e6):.0f}M tokens total.")
         sampled_ds, start_idx, curr_token, remain_token = sample_once(ds_shuffled, max_token,
-                                                                    start_idx, estim_sample_num,
-                                                                    curr_token, num_proc)
+                                                                      start_idx, estim_sample_num,
+                                                                      curr_token, num_proc)
         result_ds = concatenate_datasets([result_ds, sampled_ds])
         print(f"Current Data Points: {start_idx+1}", 
               f"Current Tokens {(curr_token/1e6):.0f}M",
@@ -93,3 +94,6 @@ if __name__ == "__main__":
               f"Estimated Data Points To Be Tokenized: {estim_sample_num}")
 
     result_ds.save_to_disk(f"./original_datasets/skypile_2022_sampled_{(curr_token/1e6):.0f}M")
+
+if __name__ == "__main__":
+    main()

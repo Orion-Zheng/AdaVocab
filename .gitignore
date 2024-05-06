@@ -1,7 +1,9 @@
 experiment_*/
 original_datasets/
+original_models/
 tokenized_datasets/
 wandb/
 dist_log/
 .deepspeed_env
 lm-evaluation-harness/
+*.pyc

@@ -65,7 +65,7 @@ TRAIN_SCRIPT="train.py \
               --use_flash True \
               --do_train True \
               --bf16 True \
-              --freeze_embed True \
+              --freeze_non_embed True \
               "
 
 if [ -z "$PBS_NODEFILE" ]; then

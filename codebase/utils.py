@@ -23,7 +23,7 @@ def load_tokenizer(tokenizer_dir, train_mode=False):
     return tokenizer
 
 def enable_flash_attn(model_dir):
-    model_type = get_model_type_from_config(model_dir)
+    model_type = get_model_type_from_config(model_dir)  # such as `['LlamaForCausalLM']`
     if 'LlamaForCausalLM' in model_type:
         setup_llama_flash_attn()
 
@@ -47,7 +47,7 @@ def setup_llama_tokenizer(tokenizer: Union[LlamaTokenizer, LlamaTokenizerFast], 
 
 def setup_llama_train(model: LlamaPreTrainedModel, model_args):
     model.config.use_cache = False 
-    if model_args.freeze_embed:
+    if model_args.freeze_non_embed:
         # freeze layers (disable gradients)
         for param in model.parameters(): param.requires_grad = False
         for param in model.lm_head.parameters(): param.requires_grad = True
