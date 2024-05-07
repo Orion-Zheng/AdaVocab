@@ -10,6 +10,8 @@ def noisy_mean_initialization(embed_weight: torch.Tensor, num_new_tokens: int, g
     noise_weight.normal_(mean=0, std=(1.0 / math.sqrt(embedding_dim)), generator=generator)
     embed_weight[-num_new_tokens:] = avg_weight + noise_weight
 
+# TODO: other ways to initialize new tokens?
+
 def resize_embedding_layer(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, generator=None) -> None:
     """
     Resize token embeddings.

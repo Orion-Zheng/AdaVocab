@@ -2,7 +2,7 @@
 ## 1.1 Download Dataset
 The argument `--token` is needed if you are acessing a private repo or repo with signed license argeement.
 ```
-python data_preparation/download_hf_repo.py \
+python codebase/tools/huggingface/download_hf_repo.py \
        --repo_type dataset \
        --repo_id allenai/WildChat \
        --local_dir ./original_datasets/wildchat
@@ -10,7 +10,7 @@ python data_preparation/download_hf_repo.py \
 ```
 ## 1.2 Download Model with Tokenizer
 ```
-python data_preparation/download_hf_repo.py \
+python codebase/tools/huggingface/download_hf_repo.py \
        --repo_type model \
        --repo_id TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
        --local_dir ./original_models/tinyllama-chat \
@@ -20,7 +20,7 @@ python data_preparation/download_hf_repo.py \
 # 2. Tokenize Dataset
 ## 2.1 Tokenize the Whole Dataset
 ```
-python data_preparation/tokenize_dataset.py \
+python codebase/tools/data_prep/tokenize_dataset.py \
        --tokenizer ./original_models/tinyllama-chat \
        --source_dir ./original_datasets/wildchat \
        --split train \
@@ -33,7 +33,7 @@ python data_preparation/tokenize_dataset.py \
 
 # 3. Packing Dataset
 ```
-python data_preparation/constant_tokens_batch_dataset.py \
+python codebase/tools/data_prep/pack_const_token_dataset.py \
        --tokenizer original_models/tinyllama-chat \
        --token_field input_ids \
        --seq_num_token 2048 \
@@ -44,7 +44,7 @@ python data_preparation/constant_tokens_batch_dataset.py \
 
 # 4. Sample Evaluation Dataset
 ```
-python data_preparation/select_given_samples.py \
+python codebase/tools/data_prep/sample_given_tokens.py \
        --dataset_path tokenized_datasets/wildchat_tinyllama-chat_2048_ft \
        --output_path tokenized_datasets/wildchat_tinyllama-chat_1M_eval_fake \
        --num_samples 500 \

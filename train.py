@@ -18,9 +18,11 @@ from transformers.integrations.integration_utils import WandbCallback
 from datetime import datetime, timedelta
 
 from codebase.monkey_patch import new_wandb_on_train_end
-from codebase.dist_logging import get_dist_logger
-from codebase.utils import print_trainable_parameters, load_tokenizer, prepare_for_train, enable_flash_attn, get_expect_end_time
+from codebase.utils import print_trainable_parameters, load_tokenizer, prepare_for_train, enable_flash_attn
+from codebase.monkey_patch.trainer_safe_save_callback import SafeSavingCallback_NSCC
 from codebase.args_parser import parse_args
+from codebase.dist_logging import get_dist_logger
+
 # can skip if you have already logged in at console by 'wandb login'
 # import wandb
 # wandb.login(key="")
@@ -31,28 +33,8 @@ os.environ['WANDB_LOG_MODEL'] = 'true'
 IGNORE_INDEX = -100
 SAFE_MINUTES = 5
 
-class SafeSavingCallback_PBS(TrainerCallback):
-    safe_minutes = SAFE_MINUTES
-    def __init__(self):
-        self.end_time = get_expect_end_time()
-        self.safe_must_save = self.end_time - timedelta(minutes=self.safe_minutes)
-        self.already_save = False
-        
-    def on_step_end(self, args, state, control, **kwargs):
-        """
-        Event called at the beginning of a training step. If using gradient accumulation, one training step might take several inputs.
-        args: TrainingArguments, state: TrainerState, control: TrainerControl
-        """
-        current_time = datetime.now()
-        if current_time > self.safe_must_save and not self.already_save:
-            control.should_save = True
-            logger.info('Reach Safe Saving Time, set `control.should_save = True`')
-            self.already_save = True
-            return control
-        
-    def on_epoch_end(self, args, state, control, **kwargs):
-        control.should_save = True
-        return control
+SafeSavingCallback_NSCC.safe_minutes = SAFE_MINUTES
+    
 @dataclass
 class PaddToMaxLenCollator(object):
     # Adapt from: https://github.com/ymcui/Chinese-LLaMA-Alpaca/blob/6e8c6c23e51ec8f0cf8a2b1f1633e52edb768e9c/scripts/training/build_dataset.py
@@ -123,7 +105,7 @@ def main():
         eval_dataset=eval_data, 
         args=trainer_config,
         data_collator=PaddToMaxLenCollator(tokenizer, model_args.max_length), 
-        # callbacks=[SafeSavingCallback_PBS]  # only for PBS Pro Cluster(e.g. NSCC)
+        # callbacks=[SafeSavingCallback_NSCC]  # only for PBS Pro Cluster(e.g. NSCC)
     )
 
     # Training

@@ -1,18 +1,18 @@
 #!/bin/bash
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
 
-MODEL_DIR="original_models/tinyllama-chat"
-TOKENIZER_DIR="original_models/tinyllama-chat"
+MODEL_DIR="experiment_models/tinyllama_expanded_empty"
+TOKENIZER_DIR="experiment_models/tinyllama_expanded_empty"
 # TRAIN_DATA_DIR="tokenized_datasets/skypile_2022_sampled_50M_2048_colossal_ft"  # for debug
-TRAIN_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_2048_ft"  # for train
-EVAL_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_1M_eval_fake"
-OUTPUT_DIR="experiment_ckpts/AdaVocab_debug"
+TRAIN_DATA_DIR="tokenized_datasets/skypile_2022_sampled_5000M_2048_colossal_ft"  # for train
+EVAL_DATA_DIR="tokenized_datasets/skypile_2023_sampled_100_eval_colossal_ft_"
+OUTPUT_DIR="experiment_ckpts/tinyllama_expanded_frez_embed"
 
-DIST_CONFIG="config/accelerate_config/nscc/one_node_one_gpu.yaml"  # Single-Node, Single-GPU (for debug)
-# DIST_CONFIG="config/accelerate_config/nscc/one_node_4_gpu_zero2_offload.yaml"  # Single-Node, Multi-GPU + Deepspeed
+# DIST_CONFIG="config/accelerate/nscc/one_node_one_gpu.yaml"  # Single-Node, Single-GPU (for debug)
+DIST_CONFIG="config/accelerate/nscc/one_node_4_gpu_zero2_offload.yaml"  # Single-Node, Multi-GPU + Deepspeed
 
-export WANDB_PROJECT="AdaVocab"
-WANDB_RUN_NAME="soc_ada_vocab_debug"
+export WANDB_PROJECT="baseline"
+WANDB_RUN_NAME="nscc-tinyllama_training"
 
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 WANDB_RUN_NAME="${WANDB_RUN_NAME}-${TIMESTAMP}"
@@ -35,10 +35,10 @@ accelerate launch --config_file ${DIST_CONFIG} --gradient_accumulation_steps ${G
                   --output_dir ${OUTPUT_DIR} \
                   --gradient_accumulation_steps ${GRAD_ACC_STEP} \
                   --per_device_eval_batch_size 1 \
-                  --per_device_train_batch_size 1 \
+                  --per_device_train_batch_size 16 \
                   --max_token_per_seq 2048 \
-                  --eval_steps 5 \
-                  --save_steps 10 \
+                  --eval_steps 100 \
+                  --save_steps 200 \
                   --learning_rate 2e-5 \
                   --optim paged_adamw_32bit --adam_beta1 0.9 --adam_beta2 0.95 \
                   --weight_decay 0.01 \
@@ -53,13 +53,13 @@ accelerate launch --config_file ${DIST_CONFIG} --gradient_accumulation_steps ${G
                   --use_flash True \
                   --do_train True \
                   --bf16 True \
-                  # --freeze_non_embed True \
+                  --freeze_non_embed True \
                 #   --resume_from_checkpoint experiment_ckpts/tinyllama_expanded_frez_embed-2024-04-12-221505/checkpoint-132/ \
                 #   --save_total_limit 3 \
                 #   --load_best_model_at_end True
                 #   --warmup_steps 300 \  
-                #   --quant_config_path config/quant_config/4bit_quant.json \
-                #   --lora_config_path config/peft_config/lora.json \
+                #   --quant_config_path config/quant/4bit_quant.json \
+                #   --lora_config_path config/peft/lora.json \
                 #   --max_steps 100 \
                   
                            

@@ -6,7 +6,7 @@ GPU_PER_NODE=2
 N_NODE=$(wc -l < $PBS_NODEFILE)  # GET N_NODE FROM PBS PRO CLUSTER
 MAIN_HOST=$(hostname)
 WORK_ABS_DIR="/home/users/nus/e0792473/scratch/EfficientVocabExtend"
-ACCELERATE_CONFIG="config/accelerate_config/nscc/multi_node_zero2_offload_template.yaml"  # Set up the accelerate config template
+ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_zero2_offload_template.yaml"  # Set up the accelerate config template
 # Training Arguments
 export WANDB_PROJECT="NSCC_PROJ_Baseline"
 WANDB_RUN_NAME="nscc-tinyllama_training"
@@ -31,7 +31,7 @@ echo "Number of Nodes: " $N_NODE "; GPU per Node: " $GPU_PER_NODE
 echo "Main Host Address: "$MAIN_HOST
 echo "Dispatching Accelerate Configs to All Nodes..."
 # 1. Dispatch accelerate config to all nodes with correct `machine_rank` on each node (mpirun -np xxx or srun -N xxx)
-mpirun -np $N_NODE python dist_env_tools/set_dist_config.py --n_node ${N_NODE} --gpu_per_node ${GPU_PER_NODE} \
+mpirun -np $N_NODE python codebase/dist_env_tools/set_dist_config.py --n_node ${N_NODE} --gpu_per_node ${GPU_PER_NODE} \
                         --main_ip ${MAIN_HOST} \
                         --default_config ${ACCELERATE_CONFIG} \
                         --local_save_path ${LOCAL_CONFIG}

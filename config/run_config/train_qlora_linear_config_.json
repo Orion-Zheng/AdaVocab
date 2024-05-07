@@ -1,7 +1,0 @@
-{
-    "wandb_run_name": "tacc_train",
-    "optim": "paged_adamw_8bit",
-    "learning_rate": 2e-5,
-    "lr_scheduler_type": "cosine",
-    "warmup_ratio": 0.05
-}

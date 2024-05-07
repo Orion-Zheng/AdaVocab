@@ -16,10 +16,12 @@ def split_dataset_by_cat(dataset, classify_func, cat_key, num_proc=1):
 
 
 if __name__ == '__main__':
-    dataset = load_dataset("./original_datasets/SlimPajama_sampled",
+    dataset = load_dataset("original_datasets/SlimPajama_sampled",
                            cache_dir="./cache_dir")
     test_set = dataset['test']
     cat_name = "category"
+    num_proc = 1
+    # define a function to classify samples base on some meta info, e.g. subset names in RedPajama
     classify_func = lambda x: {cat_name: x["meta"]["redpajama_set_name"]}
-    subset_dict = split_dataset_by_cat(test_set, classify_func, cat_name)
-    subset_dict.save_to_disk('./original_datasets/splitted_slimpajama_6b_test')
+    subset_dict = split_dataset_by_cat(test_set, classify_func, cat_name, num_proc=num_proc)
+    subset_dict.save_to_disk('original_datasets/splitted_slimpajama_6b_test')

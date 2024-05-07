@@ -48,7 +48,7 @@ class DataMixture:
             batch_samples.append(samples)
         return concatenate_datasets(batch_samples).shuffle(keep_in_memory=True)
 
-if __name__ == "__main__":
+def test():
     ds1 = Dataset.from_dict({"a": [f"ds1_{i}" for i in range(100)]})
     ds2 = Dataset.from_dict({"a": [f"ds2_{i}" for i in range(100)]})
     ds3 = Dataset.from_dict({"a": [f"ds3_{i}" for i in range(100)]})
@@ -69,3 +69,6 @@ if __name__ == "__main__":
             batch_indices = data_mixture.gen_batch_indices(data_ratios, batch_size)
             batch_samples = data_mixture.gen_batch_samples(batch_indices)
             print(batch_samples['a'])
+            
+if __name__ == "__main__":
+    test()
