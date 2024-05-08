@@ -14,3 +14,6 @@ cluster_tools/**/code
 cluster_tools/**/*_gpu*/  
 # ignore vscode tunnel's vscode server directory
 cluster_tools/**/*_cpu*/
+test_snippets/
+cluster_tools/gpu_test/cuda-samples/
+cluster_tools/gpu_test/nccl-tests/

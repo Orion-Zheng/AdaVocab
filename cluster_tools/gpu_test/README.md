@@ -29,6 +29,9 @@ Run on 8 GPUs (-g 8), scanning from 8 Bytes to 128MBytes:
 
 mpirun -np 2 ./build/all_reduce_perf -b 8 -e 128M -f 2 -g 2
 
+For NUS SoC, 
+MPI_HOME=/usr/lib/x86_64-linux-gnu/openmpi
+But I didn't find NCCL 
 
 # Accelerate Test
 ```accelerate test```

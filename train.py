@@ -17,11 +17,11 @@ from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union, S
 from transformers.integrations.integration_utils import WandbCallback
 from datetime import datetime, timedelta
 
-from codebase.monkey_patch import new_wandb_on_train_end
+from codebase.monkey_patch import new_wandb_on_train_end, SafeSavingCallback_NSCC
 from codebase.utils import print_trainable_parameters, load_tokenizer, prepare_for_train, enable_flash_attn
-from codebase.monkey_patch.trainer_safe_save_callback import SafeSavingCallback_NSCC
 from codebase.args_parser import parse_args
 from codebase.dist_logging import get_dist_logger
+from codebase.model.ada_vocab_llama import AdaVocabLlamaForCausalLM
 
 # can skip if you have already logged in at console by 'wandb login'
 # import wandb
@@ -53,7 +53,7 @@ class PaddToMaxLenCollator(object):
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-def load_model(model_args, quant_config=None, peft_config=None):
+def load_model(model_args, quant_config=None, peft_config=None, model_class=AutoModelForCausalLM):
     kwargs = {
         "torch_dtype": eval(f"torch.{model_args.load_dtype}")
     }
@@ -63,7 +63,7 @@ def load_model(model_args, quant_config=None, peft_config=None):
     if model_args.use_flash:
         enable_flash_attn(model_args.model_dir)
 
-    model = AutoModelForCausalLM.from_pretrained(model_args.model_dir, **kwargs)
+    model = model_class.from_pretrained(model_args.model_dir, **kwargs)
     if model_args.do_train:
         model = prepare_for_train(model, model_args)  # e.g. disable kv cache, freeze some modules(specified in the model_args)
     if quant_config:
@@ -95,7 +95,7 @@ def main():
     logger.info(f"Evaluation Data:\n{eval_data}")
     
     tokenizer = load_tokenizer(model_args.tokenizer_dir, train_mode=model_args.do_train)
-    model = load_model(model_args, quant_config, peft_config)
+    model = load_model(model_args, quant_config, peft_config, AdaVocabLlamaForCausalLM)
     logger.info(f"Model Architecture:\n{model}")
     print_trainable_parameters(model)
     

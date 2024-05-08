@@ -1,1 +1,0 @@
-This directory contains some annotated code examples for learning purposes that may be helpful to future projects.

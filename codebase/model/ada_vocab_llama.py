@@ -1,6 +1,7 @@
 import math
 import warnings
 from typing import List, Optional, Tuple, Union
+from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
@@ -15,11 +16,14 @@ from transformers.cache_utils import Cache
 ADA_RATIO = 4
 ADA_TOPK = 20
 ADA_LOSS_WEIGHT = 0.1
+ADA_TOPK_WEIGHT = 0.1
 
 class AdaVocabHead(nn.Module):  # The same as LoRALayer
     def __init__(self, hidden_size, vocab_size, sub_vocab_dim):
         super().__init__()
         std_dev = 1 / torch.sqrt(torch.tensor(sub_vocab_dim).float())
+        # TODO: Consider adding non-linear activation function
+        # TODO: Investigate the rationale of parameter initialization
         self.A = nn.Parameter(torch.randn(hidden_size, sub_vocab_dim) * std_dev)
         self.B = nn.Parameter(torch.zeros(sub_vocab_dim, vocab_size))
 
@@ -42,7 +46,17 @@ class AdaVocabLlamaForCausalLM(LlamaForCausalLM):  # For Training(train with LM 
         self.adavocab_head = AdaVocabHead(config.hidden_size, 
                                           config.vocab_size, 
                                           self.sub_vocab_dim)
-        
+        self.freeze_original_model()
+    
+    def freeze_original_model(self):
+        # freeze orginal llama except AdaVocabHead
+        for param in self.model.parameters():
+            param.requires_grad = False
+        for param in self.lm_head.parameters():
+            param.requires_grad = False
+        for param in self.adavocab_head.parameters():
+            param.requires_grad = True
+
     def topk_mask(self, logits):
         # logits.shape: (batch_size, seq_len, vocab_size)
         topk_values, topk_indices = torch.topk(logits, self.topK, dim=-1)
@@ -87,22 +101,23 @@ class AdaVocabLlamaForCausalLM(LlamaForCausalLM):  # For Training(train with LM 
         )
 
         hidden_states = outputs[0]  # hidden_states.shape: (batch_size, seq_len, hidden_size)
-        # ------ Only for Training ------
-        # During Inference, we don't need self.lm_head in GPU memory
-        # lm_logits.shape: (batch_size, seq_len, vocab_size)  
-        lm_logits = self.lm_head(hidden_states)   
-        lm_logits = lm_logits.float()
-        # -------------------------------
-        # ada_logits.shape: (batch_size, seq_len, vocab_size)
-        ada_logits = self.adavocab_head(hidden_states)
+        batch_size, seq_len, _ = hidden_states.size()
+       
+        # This activation could be very large during training if vocab_size is large,
+        # but in inference, storing activation is not needed
+        ada_logits = self.adavocab_head(hidden_states)  # (batch_size, seq_len, vocab_size)  
         ada_logits = ada_logits.float()
-        
 
         loss = None
-        if labels is not None:
+        if labels is not None:  # during training
+            # ------ Only for Training ------
+            # During Inference, we don't need self.lm_head in GPU memory
+            lm_logits = self.lm_head(hidden_states)   # (batch_size, seq_len, vocab_size)  
+            lm_logits = lm_logits.float()
+            # -------------------------------
             # Supervised Signal of `self.adavocab_head` from two sources: 
             # 1. (Primary) BCEWithLogitsLoss between ada_logits and topk_gt_mask (distillation signal)
-            # 2. CrossEntropyLoss between ada_logits and labels (from ground truth vocab)
+            # 2. CrossEntropyLoss between ada_logits and labels with constraint (from ground truth vocab)
             
             # Loss from the first source
             # Shift so that tokens < n predict n
@@ -116,15 +131,27 @@ class AdaVocabLlamaForCausalLM(LlamaForCausalLM):  # For Training(train with LM 
             shift_labels = shift_labels.view(-1)  # (batch_size * seq_len)
             shift_labels = shift_labels.to(shift_logits.device)
             
-            loss_1 = loss_fct(shift_logits, shift_labels)
+            lm_loss = loss_fct(shift_logits, shift_labels)
             
             # Loss from the second source
-            mask_loss_fct = BCEWithLogitsLoss()  # BCE Loss includes the sigmoid function
-            # topk_gt_mask.shape: (batch_size, seq_len, vocab_size)     
-            topk_gt_labels = self.topk_mask(lm_logits)  # topk_gt_labels.shape: (batch_size, seq_len, vocab_size)
+            ada_logits = ada_logits.view(-1, self.config.vocab_size)  # (batch_size * seq_len, vocab_size)
+            ada_probs = torch.sigmoid(ada_logits)  # (batch_size * seq_len, vocab_size)
+            
+            topk_gt_mask = self.topk_mask(lm_logits)  # (batch_size, seq_len, vocab_size)
+            topk_gt_mask = topk_gt_mask.view(-1, self.config.vocab_size)  # (batch_size * seq_len, vocab_size)
+            
+            mask_loss_fct = BCEWithLogitsLoss()  # BCE Loss including the sigmoid function
+            mask_loss = mask_loss_fct(ada_logits, topk_gt_mask)
 
-            loss_2 = mask_loss_fct(ada_logits, topk_gt_labels)
-            loss = ADA_LOSS_WEIGHT * loss_1 + loss_2
+            ada_ones = ada_probs.sum()  # scalar
+            # TODO: Pad Token Handle
+            target_ones = batch_size * seq_len * self.topK  # scalar  
+            target_ones = torch.tensor(target_ones, dtype=torch.float32).to(ada_ones.device)
+            topk_loss = F.l1_loss(ada_ones, target_ones)
+
+            loss = ADA_LOSS_WEIGHT * lm_loss + mask_loss + ADA_TOPK_WEIGHT * topk_loss
+        else:  # during inference
+            print('Retrieve Sliced LM Head from Memory')
 
         if not return_dict:
             output = (ada_logits,) + outputs[1:]
@@ -149,3 +176,5 @@ class AdaVocabLlamaForCausalLM(LlamaForCausalLM):  # For Training(train with LM 
 
     def set_output_embeddings(self, new_embeddings):
         self.lm_head = new_embeddings
+    
+    # TODO: Add `get` and `set` methods for `adavocab_head`

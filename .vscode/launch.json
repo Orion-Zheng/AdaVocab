@@ -16,7 +16,7 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "--config_file",
-                "config/accelerate_config/nscc/one_node_one_gpu.yaml",
+                "config/accelerate/nscc/one_node_one_gpu.yaml",
                 "--gradient_accumulation_steps", "1",
                 "--gradient_clipping", "1.0",
                 "--mixed_precision", "bf16",
