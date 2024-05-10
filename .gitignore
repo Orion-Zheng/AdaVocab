@@ -7,15 +7,4 @@ dist_log/
 .deepspeed_env
 lm-evaluation-harness/
 *.pyc
-# ignore all pbs/slurm jobs' output files / Executable file of vscode tunnel
-cluster_tools/**/*.out  
-cluster_tools/**/code
-# ignore vscode tunnel's vscode server directory
-cluster_tools/**/*_gpu*/  
-# ignore vscode tunnel's vscode server directory
-cluster_tools/**/*_cpu*/
 test_snippets/
-cluster_tools/gpu_test/cuda-samples/
-cluster_tools/gpu_test/nccl-tests/
-cluster_tools/cloud_storage/rclone*/
-cluster_tools/cloud_storage/*.zip
