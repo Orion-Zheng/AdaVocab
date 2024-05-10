@@ -17,3 +17,5 @@ cluster_tools/**/*_cpu*/
 test_snippets/
 cluster_tools/gpu_test/cuda-samples/
 cluster_tools/gpu_test/nccl-tests/
+cluster_tools/cloud_storage/rclone*/
+cluster_tools/cloud_storage/*.zip

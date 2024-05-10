@@ -10,31 +10,8 @@ import json
 import argparse
 import yaml
 import os
+import socket
 
-def get_hostnames(node_count):
-    """
-    Execute the MPI command 'mpirun' with a specified number of nodes and capture the hostname output.
-
-    Args:
-        node_count (int): The number of nodes to use with the 'mpirun' command.
-
-    Returns:
-        list: A list of strings, each representing a line of output from the command execution,
-              specifically the hostname of each node involved in the MPI task.
-    """
-    # Construct the command with the provided node_count
-    command = ['mpirun', '-np', str(node_count), 'hostname']
-    
-    try:
-        # Execute the command and capture the output
-        result_1 = subprocess.run(command, text=True, capture_output=True, check=True)
-        # Split the output by newline to get a list of lines
-        hostname_list = result_1.stdout.strip().split('\n')
-        
-        return hostname_list
-    except subprocess.CalledProcessError as e:
-        # In case of an error, return the error message as a list
-        raise OSError(f"Command execution failed: {e}")
 
 def modify_yaml_config(input_file_path, output_file_path, modifications):
     # Make sure the output path exist
@@ -57,20 +34,21 @@ def modify_yaml_config(input_file_path, output_file_path, modifications):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n_node', type=str, help='Number of Nodes')
+    parser.add_argument('--node_list', nargs='+', help='List of node names')
     parser.add_argument('--gpu_per_node', type=str, help='GPU per node')
     parser.add_argument('--main_ip', type=str, help='IP Address of the main host.')
     parser.add_argument('--default_config', type=str, help='default accelerate config')
     parser.add_argument('--local_save_path', default='my_config.yaml', type=str, help='default accelerate config')
     args = parser.parse_args()
     
-    n_node = args.n_node
+
+    n_node = len(args.node_list)
     gpu_per_node = args.gpu_per_node
     main_ip = args.main_ip
     default_config = args.default_config
     local_save_path = args.local_save_path
-
-    hostname_list = get_hostnames(n_node)
+    hostname_list = args.node_list
+    
     hostname_list.remove(main_ip)
     hostname_list.sort()
     
@@ -80,7 +58,7 @@ def main():
     print("Global HOST_MAP: ", hostname_map)
     
     try:
-        hostname = subprocess.check_output(["hostname"], text=True).strip()
+        hostname = socket.gethostname()
         machine_rank = hostname_map[hostname]
     except KeyError as e:
         print(f"Can't Find the Hostname in the Mapping File.")

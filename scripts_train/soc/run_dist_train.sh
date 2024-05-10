@@ -1,21 +1,19 @@
 #!/bin/bash
-export NCCL_DEBUG=INFO
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
 # Distributed Arguments
-GPU_PER_NODE=2
-N_NODE=$(wc -l < $PBS_NODEFILE)  # GET N_NODE FROM PBS PRO CLUSTER
-MAIN_HOST=$(hostname)
-WORK_ABS_DIR="/home/users/nus/e0792473/scratch/EfficientVocabExtend"
-ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_zero2_offload_template.yaml"  # Set up the accelerate config template
+GPU_PER_NODE=1
+N_NODE=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)  # GET N_NODE FROM PBS PRO CLUSTER
+MAIN_HOST=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+WORK_ABS_DIR="/home/z/zheng22/AdaVocab"
+ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_template.yaml"  # Set up the accelerate config template
 # Training Arguments
-export WANDB_PROJECT="NSCC_PROJ_Baseline"
-WANDB_RUN_NAME="nscc-tinyllama_training"
-MODEL_DIR="experiment_models/tinyllama_expanded_empty"
-TOKENIZER_DIR="experiment_models/tinyllama_expanded_empty"
-TRAIN_DATA_DIR="tokenized_datasets/skypile_2022_sampled_50M_2048_colossal_ft"  # for debug
-# TRAIN_DATA_DIR="tokenized_datasets/skypile_2022_sampled_5000M_2048_colossal_ft"  # for train
-EVAL_DATA_DIR="tokenized_datasets/skypile_2023_sampled_100_eval_colossal_ft_"
-OUTPUT_DIR="experiment_ckpts/tinyllama_expanded_frez_embed"
+export WANDB_PROJECT="SoC_Test"
+WANDB_RUN_NAME="SoC_Multi_Node_Test"
+MODEL_DIR="original_models/tinyllama-chat"
+TOKENIZER_DIR="original_models/tinyllama-chat"
+TRAIN_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_2048_ft"  
+EVAL_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_1M_eval_fake"
+OUTPUT_DIR="experiment_ckpts/AdaVocab_debug"
 
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 WANDB_RUN_NAME="${WANDB_RUN_NAME}-${TIMESTAMP}"
@@ -26,17 +24,22 @@ GRAD_ACC_STEP=8
 GRAD_CLIP=1.0
 
 # Start Multi-Node Training
-LOCAL_CONFIG="/tmp/my_nscc_dist_config.yaml"  # Multi-Node, Multi-GPU + Deepspeed
+LOCAL_CONFIG="/tmp/my_soc_dist_config.yaml"  # Multi-Node, Multi-GPU
 echo "Number of Nodes: " $N_NODE "; GPU per Node: " $GPU_PER_NODE
 echo "Main Host Address: "$MAIN_HOST
 echo "Dispatching Accelerate Configs to All Nodes..."
 # 1. Dispatch accelerate config to all nodes with correct `machine_rank` on each node (mpirun -np xxx or srun -N xxx)
-mpirun -np $N_NODE python codebase/tools/dist_env/set_dist_config.py --n_node ${N_NODE} --gpu_per_node ${GPU_PER_NODE} \
+NODE_LIST=$(echo $(scontrol show hostnames "$SLURM_JOB_NODELIST"))
+NODE_LIST_COMMA=$(echo "$(scontrol show hostnames "$SLURM_JOB_NODELIST")" | tr '\n' ',' | sed 's/,$//')
+srun -N $N_NODE -w $NODE_LIST_COMMA --ntasks-per-node=1 python codebase/tools/dist_env/set_dist_config.py \
+                        --node_list ${NODE_LIST} \
+                        --gpu_per_node ${GPU_PER_NODE} \
                         --main_ip ${MAIN_HOST} \
                         --default_config ${ACCELERATE_CONFIG} \
                         --local_save_path ${LOCAL_CONFIG}
-# 2. Run Multi-node Training
-# Deepspeed Usage: https://github.com/huggingface/accelerate/blob/b8c85839531ded28efb77c32e0ad85af2062b27a/docs/source/usage_guides/deepspeed.md?plain=1#L582
+
+# # 2. Run Multi-node Training
+# # Deepspeed Usage: https://github.com/huggingface/accelerate/blob/b8c85839531ded28efb77c32e0ad85af2062b27a/docs/source/usage_guides/deepspeed.md?plain=1#L582
 LAUNCH_SCRIPT="accelerate launch --config_file ${LOCAL_CONFIG} --gradient_accumulation_steps ${GRAD_ACC_STEP} --gradient_clipping ${GRAD_CLIP} --mixed_precision bf16"
 TRAIN_SCRIPT="train.py \
               --run_name ${WANDB_RUN_NAME} \
@@ -67,13 +70,8 @@ TRAIN_SCRIPT="train.py \
               --bf16 True \
               --freeze_non_embed True \
               "
-
-if [ -z "$PBS_NODEFILE" ]; then
-  echo "PBS_NODEFILE is not set. Are you running this script in a PBS environment?"
-  exit 1
-fi
-HOSTLIST=$(paste -sd, $PBS_NODEFILE)
-export PDSH_RCMD_TYPE=ssh
-trap 'echo "Terminating accelerate processes on all nodes..."; pdsh -w $HOSTLIST "pkill -u $USER -f accelerate"' SIGINT
-pdsh -w $HOSTLIST "bash --login -c 'cd $WORK_ABS_DIR && $LAUNCH_SCRIPT $TRAIN_SCRIPT'"
-
+echo "$LAUNCH_SCRIPT $TRAIN_SCRIPT"
+# # Run Multi-Node Training
+# srun -N 2 -n 2 -w xgpg2,xgpg3 $LAUNCH_SCRIPT $TRAIN_SCRIPT
+srun -N 1 -n 1 -w xgpg2 $LAUNCH_SCRIPT $TRAIN_SCRIPT
+srun -N 1 -n 1 -w xgpg3 $LAUNCH_SCRIPT $TRAIN_SCRIPT
