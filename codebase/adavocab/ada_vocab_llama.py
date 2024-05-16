@@ -15,15 +15,15 @@ from transformers.cache_utils import Cache
 
 ADA_RATIO = 4
 ADA_TOPK = 20
-ADA_LOSS_WEIGHT = 0.1
-ADA_TOPK_WEIGHT = 0.1
-
+ADA_LOSS_WEIGHT = 0.1 # lm_loss: 10.375   mask_loss: 0.6931
+ADA_TOPK_WEIGHT = 0.00000005 # topk_loss: 32727040
+# ADA_LOSS_WEIGHT * lm_loss + mask_loss + ADA_TOPK_WEIGHT * topk_loss
 class AdaVocabHead(nn.Module):  # The same as LoRALayer
     def __init__(self, hidden_size, vocab_size, sub_vocab_dim):
         super().__init__()
         std_dev = 1 / torch.sqrt(torch.tensor(sub_vocab_dim).float())
         # TODO: Consider adding non-linear activation function
-        # TODO: Investigate the rationale of parameter initialization
+        # TODO: Investigate the rationale of parameter initialization  Tingyuan: Maybe consider using random initialization with low variance
         self.A = nn.Parameter(torch.randn(hidden_size, sub_vocab_dim) * std_dev)
         self.B = nn.Parameter(torch.zeros(sub_vocab_dim, vocab_size))
 

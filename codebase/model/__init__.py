@@ -1,1 +1,1 @@
-from .ada_vocab_llama import AdaVocabLlamaForCausalLM, AdaVocabHead
+from ..adavocab.ada_vocab_llama import AdaVocabLlamaForCausalLM, AdaVocabHead

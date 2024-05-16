@@ -22,12 +22,15 @@ from codebase.utils import print_trainable_parameters, load_tokenizer, prepare_f
 from codebase.args_parser import parse_args
 from codebase.dist_logging import get_dist_logger
 from codebase.adavocab.ada_vocab_llama import AdaVocabLlamaForCausalLM
+import torch.nn.functional as F
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from datasets import load_metric
 
 # can skip if you have already logged in at console by 'wandb login'
 import wandb
-wandb.login(key="")
+wandb.login(key="a412c1e679c25ec529ba4dcfd0ec19e74c45f8cb")
+wandb.init(project='adaVocab', name='compute_loss test2024_05_16_03')
 
 logger = get_dist_logger()
 os.environ['TRANSFORMERS_NO_ADVISORY_WARNINGS'] = 'true'
@@ -36,6 +39,16 @@ IGNORE_INDEX = -100
 SAFE_MINUTES = 5
 
 SafeSavingCallback_NSCC.safe_minutes = SAFE_MINUTES
+
+ADA_RATIO = 4
+ADA_TOPK = 20
+ADA_LOSS_WEIGHT = 0.1 # lm_loss: 10.375   mask_loss: 0.6931
+ADA_TOPK_WEIGHT = 0.00000005 # topk_loss: 32727040
+# ADA_LOSS_WEIGHT * lm_loss + mask_loss + ADA_TOPK_WEIGHT * topk_loss
+
+
+
+
     
 @dataclass
 class PaddToMaxLenCollator(object):
@@ -80,8 +93,128 @@ def enable_monkey_patch():
     logger.info('New `on_train_end` is applied to `WandbCallback`')
     WandbCallback.on_train_end = new_wandb_on_train_end
 
+
+class AdaLossWandbCallback(TrainerCallback):
+    def on_step_end(self, args, state, control, model=None, **kwargs):
+        # 使用wandb记录额外的损失值
+        # 如果是多机器，可能需要使用commit=False
+        print("reflectio step: {}".format(state.global_step))
+        wandb.log({
+            "weighted_lm_loss": model.weighted_lm_loss.item(),
+            "mask_loss": model.mask_loss.item(),
+            "weighted_topk_loss": model.weighted_topk_loss.item()
+                }, 
+                #   step=state.global_step
+                )
+        
+# Customized for training adaVocab heads
+class AdaTrainer(Trainer):
+
+    def compute_loss(
+        self,
+        model,
+        inputs,
+        return_outputs=False,
+    ):
+        """
+        # TODO: check multi-GPU setting.
+        Compute the training loss for the model.
+
+        Args:
+            model (torch.nn.Module): The model for which to compute the loss.
+            inputs (dict): The input data, including input IDs, attention mask, and labels.
+            return_outputs (bool): Whether to return model outputs along with the loss.
+
+        Returns:
+            Union[float, Tuple[float, torch.Tensor]]: The computed loss, optionally with model outputs.
+        """
+
+        # data_ids = inputs["data_ids"]
+        input_ids = inputs["input_ids"]
+        labels = inputs["labels"]
+        attention_mask = inputs["attention_mask"]
+        
+        outputs = model.model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            position_ids=None,
+            past_key_values=None,
+            inputs_embeds=None,
+            use_cache=None,
+            output_attentions=None,
+            output_hidden_states=None,
+            return_dict=None,
+        )
+        
+        hidden_states = outputs[0]  # hidden_states.shape: (batch_size, seq_len, hidden_size)
+        batch_size, seq_len, _ = hidden_states.size()
+       
+        # This activation could be very large during training if vocab_size is large,
+        # but in inference, storing activation is not needed
+        ada_logits = model.adavocab_head(hidden_states)  # (batch_size, seq_len, vocab_size)  
+        ada_logits = ada_logits.float()
+        
+        loss = None
+        if labels is not None:  # during training
+            # ------ Only for Training ------
+            # During Inference, we don't need self.lm_head in GPU memory
+            lm_logits = model.lm_head(hidden_states)   # (batch_size, seq_len, vocab_size)  
+            lm_logits = lm_logits.float()
+            # -------------------------------
+            # Supervised Signal of `self.adavocab_head` from two sources: 
+            # 1. (Primary) BCEWithLogitsLoss between ada_logits and topk_gt_mask (distillation signal)
+            # 2. CrossEntropyLoss between ada_logits and labels with constraint (from ground truth vocab)
+            
+            # Loss from the first source
+            # Shift so that tokens < n predict n
+            shift_logits = ada_logits[..., :-1, :].contiguous()  # (batch_size, seq_len - 1, vocab_size)
+            shift_labels = labels[..., 1:].contiguous()  # (batch_size, seq_len - 1)
+
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()  # CE loss includes the softmax function
+            shift_logits = shift_logits.view(-1, model.config.vocab_size)  # (batch_size * (seq_len - 1), vocab_size)
+
+            shift_labels = shift_labels.view(-1)  # (batch_size * seq_len)
+            shift_labels = shift_labels.to(shift_logits.device)
+            
+            lm_loss = loss_fct(shift_logits, shift_labels)
+            
+            # Loss from the second source
+            ada_logits = ada_logits.view(-1, model.config.vocab_size)  # (batch_size * seq_len, vocab_size)
+            ada_probs = torch.sigmoid(ada_logits)  # (batch_size * seq_len, vocab_size)
+            
+            topk_gt_mask = model.topk_mask(lm_logits)  # (batch_size, seq_len, vocab_size)
+            topk_gt_mask = topk_gt_mask.view(-1, model.config.vocab_size)  # (batch_size * seq_len, vocab_size)
+            
+            mask_loss_fct = BCEWithLogitsLoss()  # BCE Loss including the sigmoid function
+            mask_loss = mask_loss_fct(ada_logits, topk_gt_mask)
+
+            ada_ones = ada_probs.sum()  # scalar
+            # TODO: Pad Token Handle
+            target_ones = batch_size * seq_len * model.topK  # scalar  
+            target_ones = torch.tensor(target_ones, dtype=torch.float32).to(ada_ones.device)
+            topk_loss = F.l1_loss(ada_ones, target_ones)
+
+            loss = ADA_LOSS_WEIGHT * lm_loss + mask_loss + ADA_TOPK_WEIGHT * topk_loss
+            
+            # 将额外的损失值存储在模型属性中
+            model.weighted_lm_loss = ADA_LOSS_WEIGHT * lm_loss
+            model.mask_loss = mask_loss
+            model.weighted_topk_loss = ADA_TOPK_WEIGHT * topk_loss
+        
+            
+        # `compute_loss` is also used in evaluation loop, where model.training = False
+        else:  # during inference
+            print('Retrieve Sliced LM Head from Memory')
+
+        return (loss, outputs) if return_outputs else loss
+
+        
+        
+
+
 def main():
-    enable_monkey_patch()
+    enable_monkey_patch() 
     
     model_args, data_args, trainer_config, peft_config, quant_config, log_args = parse_args()
     # TODO: add option to not using eval data(considering training arguments)
@@ -121,17 +254,29 @@ def main():
         print(logits, labels)
         return (logits, labels)
     
-    trainer = Trainer(
+    # trainer = Trainer(
+    #     model=model,
+    #     train_dataset=train_data,
+    #     eval_dataset=eval_data, 
+    #     args=trainer_config,
+    #     data_collator=PaddToMaxLenCollator(tokenizer, model_args.max_length), 
+    #     compute_metrics=compute_metrics, # Tingyuan
+    #     preprocess_logits_for_metrics=preprocess_logits_for_metrics   # Tingyuan
+    #     # callbacks=[SafeSavingCallback_NSCC]  # only for for PBS Pro Cluster(e.g. NSCC)
+    # )
+    trainer = AdaTrainer(
         model=model,
         train_dataset=train_data,
         eval_dataset=eval_data, 
         args=trainer_config,
         data_collator=PaddToMaxLenCollator(tokenizer, model_args.max_length), 
-        compute_metrics=compute_metrics, # Tingyuan
-        preprocess_logits_for_metrics=preprocess_logits_for_metrics   # Tingyuan
+        callbacks=[AdaLossWandbCallback()] 
+        # compute_metrics=compute_metrics, # Tingyuan
+        # preprocess_logits_for_metrics=preprocess_logits_for_metrics   # Tingyuan
         # callbacks=[SafeSavingCallback_NSCC]  # only for for PBS Pro Cluster(e.g. NSCC)
     )
-
+    
+    
     # Training
     if model_args.do_train:
         train_result = trainer.train(resume_from_checkpoint=model_args.resume_from_checkpoint)
@@ -148,8 +293,7 @@ def main():
 
         metrics["perplexity"] = perplexity
         trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", 
-                             )  # eval_results.json
+        trainer.save_metrics("eval", metrics)  # eval_results.json
 
 if __name__ == "__main__":
     main()
