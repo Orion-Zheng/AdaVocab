@@ -21,11 +21,13 @@ from codebase.monkey_patch import new_wandb_on_train_end, SafeSavingCallback_NSC
 from codebase.utils import print_trainable_parameters, load_tokenizer, prepare_for_train, enable_flash_attn
 from codebase.args_parser import parse_args
 from codebase.dist_logging import get_dist_logger
-from codebase.model.ada_vocab_llama import AdaVocabLlamaForCausalLM
+from codebase.adavocab.ada_vocab_llama import AdaVocabLlamaForCausalLM
+
+from datasets import load_metric
 
 # can skip if you have already logged in at console by 'wandb login'
-# import wandb
-# wandb.login(key="")
+import wandb
+wandb.login(key="")
 
 logger = get_dist_logger()
 os.environ['TRANSFORMERS_NO_ADVISORY_WARNINGS'] = 'true'
@@ -99,13 +101,35 @@ def main():
     logger.info(f"Model Architecture:\n{model}")
     print_trainable_parameters(model)
     
+    def compute_metrics(eval_preds):
+        """
+        Tingyuan: Add eval compute metrics
+        Some messages from (compute_metrics): https://zhuanlan.zhihu.com/p/414553911
+        (load_metric): https://zhuanlan.zhihu.com/p/653820729
+        """
+        metric = load_metric("glue", "mrpc")
+        logits, labels = eval_preds.predictions, eval_preds.label_ids
+        # 上一行可以直接简写成：
+        # logits, labels = eval_preds  因为它相当于一个tuple
+        predictions = np.argmax(logits, axis=-1)
+        return metric.compute(predictions=predictions, references=labels)
+
+    def preprocess_logits_for_metrics(logits, labels):
+        """
+        Tingyuan: Add preprocess_logits_for_metrics
+        """
+        print(logits, labels)
+        return (logits, labels)
+    
     trainer = Trainer(
         model=model,
         train_dataset=train_data,
         eval_dataset=eval_data, 
         args=trainer_config,
         data_collator=PaddToMaxLenCollator(tokenizer, model_args.max_length), 
-        # callbacks=[SafeSavingCallback_NSCC]  # only for PBS Pro Cluster(e.g. NSCC)
+        compute_metrics=compute_metrics, # Tingyuan
+        preprocess_logits_for_metrics=preprocess_logits_for_metrics   # Tingyuan
+        # callbacks=[SafeSavingCallback_NSCC]  # only for for PBS Pro Cluster(e.g. NSCC)
     )
 
     # Training
@@ -124,7 +148,8 @@ def main():
 
         metrics["perplexity"] = perplexity
         trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)  # eval_results.json
+        trainer.save_metrics("eval", 
+                             )  # eval_results.json
 
 if __name__ == "__main__":
     main()
