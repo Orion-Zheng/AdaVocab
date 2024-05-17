@@ -1,11 +1,14 @@
 #!/bin/bash
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
+export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
+export GLOO_SOCKET_IFNAME="enp68s0f0" 
 # Distributed Arguments
 GPU_PER_NODE=1
-N_NODE=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)  # GET N_NODE FROM PBS PRO CLUSTER
+N_NODE=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)  # GET N_NODE FROM SLURM CLUSTER
 MAIN_HOST=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 WORK_ABS_DIR="/home/z/zheng22/AdaVocab"
 ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_template.yaml"  # Set up the accelerate config template
+# ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_zero2_offload_template.yaml"  # Deepspeed not Supported yet
 # Training Arguments
 export WANDB_PROJECT="SoC_Test"
 WANDB_RUN_NAME="SoC_Multi_Node_Test"
@@ -68,10 +71,9 @@ TRAIN_SCRIPT="train.py \
               --use_flash True \
               --do_train True \
               --bf16 True \
-              --freeze_non_embed True \
+              --freeze_non_embed False \
+              --ddp_backend gloo
               "
 echo "$LAUNCH_SCRIPT $TRAIN_SCRIPT"
 # # Run Multi-Node Training
-# srun -N 2 -n 2 -w xgpg2,xgpg3 $LAUNCH_SCRIPT $TRAIN_SCRIPT
-srun -N 1 -n 1 -w xgpg2 $LAUNCH_SCRIPT $TRAIN_SCRIPT
-srun -N 1 -n 1 -w xgpg3 $LAUNCH_SCRIPT $TRAIN_SCRIPT
+srun -N $N_NODE --ntasks-per-node=$GPU_PER_NODE -w $NODE_LIST_COMMA $LAUNCH_SCRIPT $TRAIN_SCRIPT

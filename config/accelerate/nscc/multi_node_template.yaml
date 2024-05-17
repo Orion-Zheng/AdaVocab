@@ -3,7 +3,7 @@ debug: false
 distributed_type: MULTI_GPU
 downcast_bf16: 'no'
 gpu_ids: all
-machine_rank: 0
+machine_rank: YOUR_RANK
 main_process_ip: YOUR_MAIN_HOST_IP
 main_process_port: 9999
 main_training_function: main

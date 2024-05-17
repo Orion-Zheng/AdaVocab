@@ -44,6 +44,7 @@ class TrainArgs():
     max_grad_norm: Optional[float] = 1.0
     gradient_checkpointing: Optional[bool] = None
     gradient_checkpointing_kwargs: Optional[dict] = None
+    ddp_backend: Optional[str] = None
     
     def __post_init__(self):
         if self.target_token_per_batch:

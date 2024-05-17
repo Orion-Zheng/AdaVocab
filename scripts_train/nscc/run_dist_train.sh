@@ -1,6 +1,7 @@
 #!/bin/bash
 export NCCL_DEBUG=INFO
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
+export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
 # Distributed Arguments
 GPU_PER_NODE=2
 N_NODE=$(wc -l < $PBS_NODEFILE)  # GET N_NODE FROM PBS PRO CLUSTER

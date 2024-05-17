@@ -1,4 +1,5 @@
 import os
+from socket import gethostname
 import sys
 import math
 import torch
@@ -21,7 +22,6 @@ from codebase.monkey_patch import new_wandb_on_train_end, SafeSavingCallback_NSC
 from codebase.utils import print_trainable_parameters, load_tokenizer, prepare_for_train, enable_flash_attn
 from codebase.args_parser import parse_args
 from codebase.dist_logging import get_dist_logger
-from codebase.model.ada_vocab_llama import AdaVocabLlamaForCausalLM
 
 # can skip if you have already logged in at console by 'wandb login'
 # import wandb
@@ -95,7 +95,7 @@ def main():
     logger.info(f"Evaluation Data:\n{eval_data}")
     
     tokenizer = load_tokenizer(model_args.tokenizer_dir, train_mode=model_args.do_train)
-    model = load_model(model_args, quant_config, peft_config, AdaVocabLlamaForCausalLM)
+    model = load_model(model_args, quant_config, peft_config)  
     logger.info(f"Model Architecture:\n{model}")
     print_trainable_parameters(model)
     
@@ -105,7 +105,7 @@ def main():
         eval_dataset=eval_data, 
         args=trainer_config,
         data_collator=PaddToMaxLenCollator(tokenizer, model_args.max_length), 
-        # callbacks=[SafeSavingCallback_NSCC]  # only for PBS Pro Cluster(e.g. NSCC)
+        # callbacks=[SafeSavingCallback_NSCC]  # only for for PBS Pro Cluster(e.g. NSCC)
     )
 
     # Training

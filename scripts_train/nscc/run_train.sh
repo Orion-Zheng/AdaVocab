@@ -1,5 +1,6 @@
 #!/bin/bash
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
+export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
 
 MODEL_DIR="experiment_models/tinyllama_expanded_empty"
 TOKENIZER_DIR="experiment_models/tinyllama_expanded_empty"

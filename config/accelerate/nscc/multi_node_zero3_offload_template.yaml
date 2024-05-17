@@ -1,12 +1,12 @@
 compute_environment: LOCAL_MACHINE
 debug: false
 deepspeed_config:
-  deepspeed_config_file: config/deepspeed_config/stage3_offload.json
+  deepspeed_config_file: config/deepspeed/stage3_offload.json
   deepspeed_multinode_launcher: standard
   zero3_init_flag: false
 distributed_type: DEEPSPEED
 downcast_bf16: 'no'
-machine_rank: 0
+machine_rank: YOUR_RANK
 main_process_ip: YOUR_MAIN_HOST_IP
 main_process_port: 9999
 main_training_function: main
