@@ -1,3 +1,6 @@
 [submodule "cluster_tools"]
 	path = cluster_tools
-	url = https://github.com/Orion-Zheng/My-HPC-Tunnels.git
+	url = git@github.com:Orion-Zheng/My-HPC-Tunnels.git
+[submodule "adavocab_llama"]
+	path = adavocab_llama
+	url = git@github.com:Orion-Zheng/AdaVocab-llama.git

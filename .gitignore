@@ -6,6 +6,6 @@ wandb/
 dist_log/
 .deepspeed_env
 lm-evaluation-harness/
-*.pyc
+**/*.pyc
 test_snippets/
 train.py
