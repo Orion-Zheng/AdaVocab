@@ -42,18 +42,10 @@ python codebase/tools/data_prep/pack_const_token_dataset.py \
        --output_dir tokenized_datasets/wildchat_tinyllama-chat_2048_ft
 ```
 
-# 4. Sample Evaluation Dataset
+# 4. Split Train and Evaluation subsets
 ```
-python codebase/tools/data_prep/sample_given_tokens.py \
+python codebase/tools/data_prep/train_test_split.py \
        --dataset_path tokenized_datasets/wildchat_tinyllama-chat_2048_ft \
-       --output_path tokenized_datasets/wildchat_tinyllama-chat_1M_eval_fake \
-       --num_samples 500 \
-       --num_proc 100 \
-       --seed 42 \
-       --columns input_ids labels
-```
-
-# 5. Run Training
-```
-bash scripts/soc/run_train.sh
+       --output_dir tokenized_datasets/wildchat_tinyllama-chat_2048_ft_split \
+       --test_size 1024 
 ```
