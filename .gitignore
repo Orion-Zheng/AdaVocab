@@ -1,6 +1,6 @@
 experiment_*/
-original_datasets/
-original_models/
+original_*/
+base_models/
 tokenized_datasets/
 wandb/
 dist_log/

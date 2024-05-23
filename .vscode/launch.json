@@ -2,6 +2,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
@@ -51,7 +52,8 @@
                 "--use_flash", "True",
                 "--do_train", "True",
                 "--bf16", "True",
-                "--freeze_non_embed", "False"
+                "--freeze_non_embed", "False",
+                
             ],
             "console": "integratedTerminal",
             "justMyCode": false
@@ -145,7 +147,8 @@
                 "--use_flash", "True",
                 "--do_train", "True",
                 "--bf16", "True",
-                "--freeze_non_embed", "False"
+                "--freeze_non_embed", "False",
+                // "--hyper_yaml_path", "adavocab_llama/config/tinyllama_test.yaml"
             ],
             "console": "integratedTerminal",
             "justMyCode": false,

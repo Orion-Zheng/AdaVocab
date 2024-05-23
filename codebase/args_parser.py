@@ -7,7 +7,9 @@ from transformers import BitsAndBytesConfig, TrainingArguments, HfArgumentParser
 from peft import LoraConfig
 from dataclasses import dataclass, field, asdict
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union, Sequence
+
 from codebase.dist_logging import get_dist_logger
+from codebase.utils import GlobalConfig
 
 logger = get_dist_logger()
 excluded_keys = ['world_gpu_size', 'target_token_per_batch', 'max_token_per_seq']
@@ -120,6 +122,10 @@ class QuantArgs():
 @dataclass
 class PeftArgs():
     lora_config_path: Optional[str] = None
+    
+# @dataclass
+# class HyperArgs():
+#     hyper_yaml_path: Optional[str] = None
 
 
 def get_quant_config(quant_args: QuantArgs) -> Optional[dict]:
@@ -162,7 +168,7 @@ def create_train_config(log_args: LogArgs, train_args: TrainArgs, eval_io_args: 
         )
     return hf_train_args
 
-def check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args):
+def check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, ):  # hp_args
     # Deprecated:
     # assert (eval_io_args.eval_steps % train_args.gradient_accumulation_steps == 0) \
     #        and (log_args.logging_steps % train_args.gradient_accumulation_steps == 0), \
@@ -170,19 +176,28 @@ def check_config_sanity(log_args, train_args, eval_io_args, model_args, data_arg
     pass
 
 def parse_args():
-    parser = HfArgumentParser((LogArgs, TrainArgs, EvalIOArgs, ModelArgs, DataArgs, PeftArgs, QuantArgs))
+    parser = HfArgumentParser((LogArgs, TrainArgs, EvalIOArgs, ModelArgs, DataArgs, PeftArgs, QuantArgs, ))  # HyperArgs
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        (log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, 
+        #  hp_args
+         ) = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else: # when using accelerate, 'train.py' | '--args' ... 
-        log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args = parser.parse_args_into_dataclasses(sys.argv[1:])
+        (log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, 
+        #  hp_args
+         ) = parser.parse_args_into_dataclasses(sys.argv[1:])
     
-    check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args)
+    check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args,
+                        # hp_args
+                        )
     
     peft_config = get_peft_config(peft_args)
     quant_config = get_quant_config(quant_args)
     trainer_config = create_train_config(log_args, train_args, eval_io_args)
     
     model_args.max_length = train_args.max_token_per_seq
+    
+    # if hp_args.hyper_yaml_path:
+    #     GlobalConfig.get_config(hp_args.hyper_yaml_path)
     
     logger.info(f"log_args:\n {log_args}")
     logger.info(f"train_args:\n {train_args}")
@@ -191,6 +206,7 @@ def parse_args():
     logger.info(f"data_args:\n {data_args}")
     logger.info(f"peft_args:\n {peft_args}")
     logger.info(f"quant_args:\n {quant_args}")
+    # logger.info(f"hyper_param_args:\n{GlobalConfig.get_config()}")
 
     return model_args, data_args, trainer_config, peft_config, quant_config, log_args
 

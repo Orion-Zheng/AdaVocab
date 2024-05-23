@@ -2,15 +2,14 @@
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
 export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
 
-MODEL_DIR="original_models/tinyllama-chat"
-TOKENIZER_DIR="original_models/tinyllama-chat"
-# TRAIN_DATA_DIR="tokenized_datasets/skypile_2022_sampled_50M_2048_colossal_ft"  # for debug
+MODEL_DIR="base_models/ada-tinyllama-chat-empty_ada_r_16"
+TOKENIZER_DIR="base_models/ada-tinyllama-chat-empty_ada_r_16"
 TRAIN_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_2048_ft_split/train"  # for train
 EVAL_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_2048_ft_split/eval"
 OUTPUT_DIR="experiment_ckpts/AdaVocab_debug"
 
-# DIST_CONFIG="config/accelerate/clossal_cloud/one_node_two_gpu.yaml"  # Single-Node, Multi-GPU (for debug)
-DIST_CONFIG="config/accelerate/clossal_cloud/one_node_two_gpu_zero2_offload.yaml"  # Single-Node, Multi-GPU + Deepspeed
+DIST_CONFIG="config/accelerate/clossal_cloud/one_node_two_gpu.yaml"  # Single-Node, Multi-GPU (for debug)
+# DIST_CONFIG="config/accelerate/clossal_cloud/one_node_two_gpu_zero2_offload.yaml"  # Single-Node, Multi-GPU + Deepspeed
 
 export WANDB_PROJECT="AdaVocab_0521"
 WANDB_RUN_NAME="colossal_cloud_ada_vocab_debug"
@@ -54,6 +53,8 @@ accelerate launch --config_file ${DIST_CONFIG} --gradient_accumulation_steps ${G
                   --use_flash True \
                   --do_train True \
                   --bf16 True \
+                  --max_steps 3 \
+                # --hyper_yaml_path adavocab_llama/config/tinyllama_test.yaml
                   # --freeze_non_embed True \
                 #   --resume_from_checkpoint experiment_ckpts/tinyllama_expanded_frez_embed-2024-04-12-221505/checkpoint-132/ \
                 #   --save_total_limit 3 \

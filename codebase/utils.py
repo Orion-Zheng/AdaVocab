@@ -9,6 +9,8 @@ from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union, S
 import os
 import subprocess
 from datetime import datetime, timedelta
+import yaml
+
 
 from codebase.dist_logging import get_dist_logger
 
@@ -123,4 +125,28 @@ def get_max_length(model):
         logger.info(f"Using default max length: {max_length}")
     return max_length
 
+def set_model_config(config: Any, args: dict):
+    for k, v in args.items():
+        setattr(config, k, v)
 
+class GlobalConfig:
+    _instance = None
+    def __new__(cls, config_path=None):
+        if cls._instance is None:
+            cls._instance = super(GlobalConfig, cls).__new__(cls)
+            if config_path is not None:
+                try:
+                    with open(config_path, 'r') as file:
+                        config = yaml.safe_load(file)
+                        for key, value in config.items():
+                            if isinstance(value, str) and value.lower() == 'none':
+                                config[key] = None
+                        cls._instance.config = config
+                except Exception as e:
+                    print(f"Error reading the config file: {e}")
+                    cls._instance.config = {}
+        return cls._instance
+
+    @staticmethod
+    def get_config(config_path=None):
+        return GlobalConfig(config_path)._instance.config
