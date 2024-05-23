@@ -9,3 +9,4 @@ lm-evaluation-harness/
 *.pyc
 test_snippets/
 train.py
+*.out
