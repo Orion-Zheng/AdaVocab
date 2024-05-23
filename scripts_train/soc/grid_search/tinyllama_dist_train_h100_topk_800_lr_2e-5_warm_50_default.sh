@@ -10,13 +10,13 @@ WORK_ABS_DIR="/home/z/zheng22/AdaVocab"
 ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_template.yaml"  # Set up the accelerate config template
 # ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_zero2_offload_template.yaml"  # Deepspeed not Supported yet
 # Training Arguments
-export WANDB_PROJECT="AdaVocab_0522_wildchat_1M_data"
-WANDB_RUN_NAME="AdaVocab_2_epoch_topk_800_lr_2e-6"
-MODEL_DIR="original_models/tinyllama-chat"
-TOKENIZER_DIR="original_models/tinyllama-chat"
+export WANDB_PROJECT="AdaVocab_0524_wildchat_1M_data"
+WANDB_RUN_NAME="tinyllama_topk_800_lr_2e-5_warm_50_default"
+MODEL_DIR="base_models/ada-tinyllama-chat-empty_ada_default"
+TOKENIZER_DIR="base_models/ada-tinyllama-chat-empty_ada_default"
 TRAIN_DATA_DIR="tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/train"  
 EVAL_DATA_DIR="tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/eval"
-OUTPUT_DIR="experiment_ckpts/AdaVocab_0522"
+OUTPUT_DIR="experiment_ckpts/AdaVocab_0524"
 
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 WANDB_RUN_NAME="${WANDB_RUN_NAME}-${TIMESTAMP}"
@@ -56,8 +56,8 @@ TRAIN_SCRIPT="train.py \
               --per_device_train_batch_size 32 \
               --max_token_per_seq 2048 \
               --eval_steps 100 \
-              --d 1000 \
-              --learning_rate 2e-6 \
+              --save_steps 1000 \
+              --learning_rate 2e-5 \
               --optim paged_adamw_32bit --adam_beta1 0.9 --adam_beta2 0.95 \
               --weight_decay 0.01 \
               --lr_scheduler_type cosine \

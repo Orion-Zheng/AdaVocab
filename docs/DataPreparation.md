@@ -11,13 +11,31 @@ python codebase/tools/huggingface/download_hf_repo.py \
 ```
 ## 1.2 Download Model with Tokenizer
 ```
+# can also use `huggingface-cli`
+huggingface-cli download meta-llama/Meta-Llama-3-8B --include "original/*" --local-dir Meta-Llama-3-8B
+```
+```
 python codebase/tools/huggingface/download_hf_repo.py \
        --repo_type model \
        --repo_id TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
        --local_dir ./original_models/tinyllama-chat \
-       [--token YOUR_HF_TOKEN ]
 ```
 
+```
+# to save up spaces, remove .bin files under ckpt
+python codebase/tools/huggingface/download_hf_repo.py \
+       --repo_type model \
+       --repo_id meta-llama/Llama-2-7b-chat-hf \
+       --local_dir ./original_models/llama-2-7b-chat \
+       [--token YOUR_HF_TOKEN ]
+```
+```
+python codebase/tools/huggingface/download_hf_repo.py \
+       --repo_type model \
+       --repo_id meta-llama/Meta-Llama-3-8B-Instruct \
+       --local_dir ./original_models/llama-3-8b-chat \
+       [--token YOUR_HF_TOKEN ]
+```
 # 2. Tokenize Dataset
 ## 2.1 Tokenize the Whole Dataset
 ```
