@@ -33,7 +33,7 @@ def main(args):
     target_dir = args.output_dir
     # _ft: tokenized data for fine-tuning. Loss is computed for each token.
     output_dir = f'{target_dir}/{dataset_dir.split("/")[-1]}_{tokenizer_path.split("/")[-1]}_ft'
-    num_proc = cpu_count() // 2
+    num_proc = cpu_count() // 4
 
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     tokenizer.add_bos_token = False

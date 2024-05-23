@@ -7,6 +7,7 @@ python codebase/tools/huggingface/download_hf_repo.py \
        --repo_id allenai/WildChat \
        --local_dir ./original_datasets/wildchat
        [--token YOUR_HF_TOKEN ]
+ 
 ```
 ## 1.2 Download Model with Tokenizer
 ```
@@ -25,6 +26,12 @@ python codebase/tools/data_prep/tokenize_dataset.py \
        --source_dir ./original_datasets/wildchat \
        --split train \
        --output_dir ./tokenized_datasets 
+
+python codebase/tools/data_prep/tokenize_dataset.py \
+       --tokenizer ./original_models/tinyllama-chat \
+       --source_dir ./original_datasets/wildchat-1M \
+       --split train \
+       --output_dir ./tokenized_datasets 
 ```
 ## 2.2 Tokenize Given Tokens from a Huge Dataset
 ```
@@ -33,19 +40,27 @@ python codebase/tools/data_prep/tokenize_dataset.py \
 
 # 3. Packing Dataset
 ```
-python codebase/tools/data_prep/pack_const_token_dataset.py \
+PYTHONPATH=. python codebase/tools/data_prep/pack_const_token_dataset.py \
        --tokenizer original_models/tinyllama-chat \
        --token_field input_ids \
        --seq_num_token 2048 \
        --buffer_size 100000 \
        --source_dir tokenized_datasets/wildchat_tinyllama-chat_ft \
        --output_dir tokenized_datasets/wildchat_tinyllama-chat_2048_ft
+
+PYTHONPATH=. python codebase/tools/data_prep/pack_const_token_dataset.py \
+       --tokenizer original_models/tinyllama-chat \
+       --token_field input_ids \
+       --seq_num_token 2048 \
+       --buffer_size 100000 \
+       --source_dir tokenized_datasets/wildchat_1M_tinyllama-chat_ft \
+       --output_dir tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft
 ```
 
 # 4. Split Train and Evaluation subsets
 ```
 python codebase/tools/data_prep/train_test_split.py \
-       --dataset_path tokenized_datasets/wildchat_tinyllama-chat_2048_ft \
-       --output_dir tokenized_datasets/wildchat_tinyllama-chat_2048_ft_split \
+       --dataset_path tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft \
+       --output_dir tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split \
        --test_size 1024 
 ```
