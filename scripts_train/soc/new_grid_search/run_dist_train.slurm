@@ -11,4 +11,4 @@
 source ~/.bashrc
 nvidia-smi
 conda activate hf_gpu_dev
-bash scripts_train/soc/grid_search/run_all_experiments.sh
+bash scripts_train/soc/new_grid_search/run_grid_search.sh
