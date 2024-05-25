@@ -1,3 +1,4 @@
+# Each (machine configuration, model configuration) pair has a corresponding configuration file
 dist_arguments:
   GPU_PER_NODE: 2
   GLOO_SOCKET_IFNAME: "ens6f0np0"
@@ -8,8 +9,8 @@ dist_arguments:
   # MAIN_HOST: "xgpi16"  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)`
   # LOCAL_CONFIG: "/tmp/my_soc_dist_config.yaml" 
 wandb_arguments:
-  WANDB_PROJECT: "AdaVocab_0525_test"
-  WANDB_RUN_NAME: "tinyllama_topk_800_lr_2e-4_warm_50_default"
+  WANDB_PROJECT: "AdaVocab_0524_wildchat_1M_data"
+  WANDB_RUN_NAME: "default"
 model_arguments:
   MODEL_DIR: "original_models/tinyllama-chat"
   TOKENIZER_DIR: "original_models/tinyllama-chat"
@@ -17,7 +18,7 @@ data_arguments:
   TRAIN_DATA_DIR: "tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/train"  
   EVAL_DATA_DIR: "tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/eval"
 output_arguments:
-  OUTPUT_DIR: "experiment_ckpts/AdaVocab_0524"
+  OUTPUT_DIR: "experiment_ckpts/AdaVocab"
 train_arguments:
   PER_DEVICE_TRAIN_BATCH_SIZE: 32  # For H100 94GB, tinyllama-chat 2048, 32 is the maximum batch size
   PER_DEVICE_EVAL_BATCH_SIZE: 1
