@@ -123,9 +123,6 @@ class QuantArgs():
 class PeftArgs():
     lora_config_path: Optional[str] = None
     
-# @dataclass
-# class HyperArgs():
-#     hyper_yaml_path: Optional[str] = None
 
 
 def get_quant_config(quant_args: QuantArgs) -> Optional[dict]:
@@ -168,36 +165,33 @@ def create_train_config(log_args: LogArgs, train_args: TrainArgs, eval_io_args: 
         )
     return hf_train_args
 
-def check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, ):  # hp_args
+def check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, other_args): 
     # Deprecated:
     # assert (eval_io_args.eval_steps % train_args.gradient_accumulation_steps == 0) \
     #        and (log_args.logging_steps % train_args.gradient_accumulation_steps == 0), \
     #        '`eval_steps` and `logging_steps` have to be a round multiple of your `gradient_accumulation_steps` since those are tested only when you actually do an update'
     pass
 
-def parse_args():
-    parser = HfArgumentParser((LogArgs, TrainArgs, EvalIOArgs, ModelArgs, DataArgs, PeftArgs, QuantArgs, ))  # HyperArgs
+def parse_args(*extra_args):
+    args_to_be_parsed = [LogArgs, TrainArgs, EvalIOArgs, ModelArgs, DataArgs, PeftArgs, QuantArgs]
+    if extra_args:
+        args_to_be_parsed += extra_args
+    parser = HfArgumentParser(args_to_be_parsed)
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        (log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, 
-        #  hp_args
-         ) = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+        parsed_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else: # when using accelerate, 'train.py' | '--args' ... 
-        (log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args, 
-        #  hp_args
-         ) = parser.parse_args_into_dataclasses(sys.argv[1:])
+        parsed_args = parser.parse_args_into_dataclasses(sys.argv[1:])
+
+    log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args = parsed_args[:7]
+    other_args = parsed_args[7:]
     
-    check_config_sanity(log_args, train_args, eval_io_args, model_args, data_args, peft_args, quant_args,
-                        # hp_args
-                        )
+    check_config_sanity(*parsed_args[:7], other_args)
     
     peft_config = get_peft_config(peft_args)
     quant_config = get_quant_config(quant_args)
     trainer_config = create_train_config(log_args, train_args, eval_io_args)
     
     model_args.max_length = train_args.max_token_per_seq
-    
-    # if hp_args.hyper_yaml_path:
-    #     GlobalConfig.get_config(hp_args.hyper_yaml_path)
     
     logger.info(f"log_args:\n {log_args}")
     logger.info(f"train_args:\n {train_args}")
@@ -206,9 +200,10 @@ def parse_args():
     logger.info(f"data_args:\n {data_args}")
     logger.info(f"peft_args:\n {peft_args}")
     logger.info(f"quant_args:\n {quant_args}")
-    # logger.info(f"hyper_param_args:\n{GlobalConfig.get_config()}")
+    for arg in other_args:
+        logger.info(f"other_args:\n {arg}")
 
-    return model_args, data_args, trainer_config, peft_config, quant_config, log_args
+    return model_args, data_args, trainer_config, peft_config, quant_config, log_args, other_args
 
 if __name__ == '__main__':
     parse_args()

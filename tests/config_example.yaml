@@ -1,0 +1,13 @@
+wandb_arguments:
+  WANDB_PROJECT: "NSCC_PROJ_Baseline"
+  WANDB_RUN_NAME: "nscc-tinyllama_training"
+model_arguments:
+  MODEL_DIR: "experiment_models/tinyllama_expanded_empty"
+  TOKENIZER_DIR: "experiment_models/tinyllama_expanded_empty"
+data_arguments:
+  TRAIN_DATA_DIR: "tokenized_datasets/skypile_2022_sampled_50M_2048_colossal_ft"
+  EVAL_DATA_DIR: "tokenized_datasets/skypile_2023_sampled_100_eval_colossal_ft_"
+other_arguments:
+  OUTPUT_DIR: "experiment_ckpts/tinyllama_expanded_frez_embed"
+  GRAD_ACC_STEP: 8
+  GRAD_CLIP: 1.0

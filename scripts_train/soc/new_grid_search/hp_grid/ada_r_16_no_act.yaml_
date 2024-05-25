@@ -1,0 +1,5 @@
+wandb_arguments:
+  WANDB_RUN_NAME: "tinyllama_topk_800_lr_2e-4_warm_50_r_16_no_act"
+ada_arguments:
+  ADA_RATIO: 16
+  ADA_ACT: False

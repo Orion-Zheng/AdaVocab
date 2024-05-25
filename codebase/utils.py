@@ -128,6 +128,7 @@ def get_max_length(model):
 def set_model_config(config: Any, args: dict):
     for k, v in args.items():
         setattr(config, k, v)
+    return config
 
 class GlobalConfig:
     _instance = None
