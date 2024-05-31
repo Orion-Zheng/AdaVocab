@@ -10,3 +10,4 @@ lm-evaluation-harness/
 test_snippets/
 train.py
 *.out
+multi_gpu_output_log/

@@ -1,29 +1,29 @@
 #!/bin/bash
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
 export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
-export GLOO_SOCKET_IFNAME="ens6f0np0" 
+export GLOO_SOCKET_IFNAME="enp68s0f0" 
 # Distributed Arguments
-GPU_PER_NODE=2
+GPU_PER_NODE=1
 N_NODE=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)  # GET N_NODE FROM SLURM CLUSTER
 MAIN_HOST=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 WORK_ABS_DIR="/home/z/zheng22/AdaVocab"
 ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_template.yaml"  # Set up the accelerate config template
 # ACCELERATE_CONFIG="config/accelerate/nscc/multi_node_zero2_offload_template.yaml"  # Deepspeed not Supported yet
 # Training Arguments
-export WANDB_PROJECT="AdaVocab_0524_wildchat_1M_data"
-WANDB_RUN_NAME="tinyllama_topk_800_lr_2e-4_warm_50_r_16"  # about 0.03 warmup ratio
-MODEL_DIR="base_models/ada-tinyllama-chat-empty_ada_r_16"
-TOKENIZER_DIR="base_models/ada-tinyllama-chat-empty_ada_r_16"
-TRAIN_DATA_DIR="tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/train"  
-EVAL_DATA_DIR="tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/eval"
-OUTPUT_DIR="experiment_ckpts/AdaVocab_0524"
+export WANDB_PROJECT="SoC_Test"
+WANDB_RUN_NAME="SoC_Multi_Node_Test"
+MODEL_DIR="original_models/tinyllama-chat"
+TOKENIZER_DIR="original_models/tinyllama-chat"
+TRAIN_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_2048_ft"  
+EVAL_DATA_DIR="tokenized_datasets/wildchat_tinyllama-chat_1M_eval_fake"
+OUTPUT_DIR="experiment_ckpts/AdaVocab_debug"
 
 TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 WANDB_RUN_NAME="${WANDB_RUN_NAME}-${TIMESTAMP}"
 OUTPUT_DIR="${OUTPUT_DIR}-${TIMESTAMP}"
 # 8 for 4 GPU --> 4(gpu) * 8(grad_acc) * 16(seq/gpu) * 2(K token/seq) = 1M tokens/batch
 # 4 for 8 GPU --> 8(gpu) * 4(grad_acc) * 16(seq/gpu) * 2(K token/seq) = 1M tokens/batch
-GRAD_ACC_STEP=4  
+GRAD_ACC_STEP=8  
 GRAD_CLIP=1.0
 
 # Start Multi-Node Training
@@ -53,16 +53,16 @@ TRAIN_SCRIPT="train.py \
               --output_dir ${OUTPUT_DIR} \
               --gradient_accumulation_steps ${GRAD_ACC_STEP} \
               --per_device_eval_batch_size 1 \
-              --per_device_train_batch_size 32 \
+              --per_device_train_batch_size 16 \
               --max_token_per_seq 2048 \
               --eval_steps 100 \
-              --save_steps 1000 \
-              --learning_rate 2e-4 \
+              --save_steps 200 \
+              --learning_rate 2e-5 \
               --optim paged_adamw_32bit --adam_beta1 0.9 --adam_beta2 0.95 \
               --weight_decay 0.01 \
               --lr_scheduler_type cosine \
               --num_train_epochs 1 \
-              --warmup_steps 50 \
+              --warmup_ratio 0.03 \
               --seed 42 \
               --load_dtype bfloat16 \
               --dataloader_num_workers 0 \

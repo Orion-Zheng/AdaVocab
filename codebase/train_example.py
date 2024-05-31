@@ -80,8 +80,8 @@ def enable_monkey_patch():
 
 def main():
     enable_monkey_patch()
-    
-    model_args, data_args, trainer_config, peft_config, quant_config, log_args = parse_args()
+    custom_args = []  # You can add customized dataclass here, which will be parsed and saved to `other_args`
+    model_args, data_args, trainer_config, peft_config, quant_config, log_args, other_args = parse_args(*custom_args)
     # TODO: add option to not using eval data(considering training arguments)
     logger.info("Load Training Dataset ...")
     train_data = load_from_disk(data_args.train_data_dir)

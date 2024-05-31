@@ -1,0 +1,54 @@
+# Each (machine configuration, model configuration) pair has a corresponding configuration file
+dist_arguments:
+  WORK_ABS_DIR: "/home/z/zheng22/AdaVocab"
+  ACCELERATE_CONFIG: "config/accelerate/nscc/multi_node_template.yaml"
+  DDP_BACKEND: "gloo"
+  # GLOO_SOCKET_IFNAME: "ens6f0np0"
+  # GPU_PER_NODE: 2 # can override the automatic detection from `$(nvidia-smi -L | wc -l)` or `$(nvidia-smi -L | grep MIG | wc -l)`
+  # N_NODE: 2  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)`
+  # MAIN_HOST: "xgpi16"  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)`
+wandb_arguments:
+  WANDB_PROJECT: "New_Train_Test"
+  WANDB_RUN_NAME: "default"
+model_arguments:
+  MODEL_DIR: "original_models/tinyllama-chat"
+  TOKENIZER_DIR: "original_models/tinyllama-chat"
+data_arguments:
+  TRAIN_DATA_DIR: "tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/train"  
+  EVAL_DATA_DIR: "tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/eval"
+output_arguments:
+  OUTPUT_DIR: "experiment_ckpts/New_Train_Test"
+train_arguments:
+  PER_DEVICE_TRAIN_BATCH_SIZE: 32  # For H100 96GB, tinyllama-chat 2048, 32 is the maximum batch size
+  PER_DEVICE_EVAL_BATCH_SIZE: 1
+  GRAD_ACC_STEP: 4 
+  GRAD_CLIP: 1.0
+  MAX_TOKEN_PER_SEQ: 2048
+  EVAL_STEPS: 100
+  SAVE_STEPS: 1000
+  LEARNING_RATE: 2e-4
+  OPTIMIZER: "paged_adamw_32bit"
+  ADAM_BETA1: 0.9
+  ADAM_BETA2: 0.95
+  WEIGHT_DECAY: 0.01
+  LR_SCHEDULER_TYPE: "cosine"
+  NUM_TRAIN_EPOCHS: 1
+  # MAX_STEPS: 10  # For debugging, will override NUM_TRAIN_EPOCHS
+  WARMUP_STEPS: 50
+  SEED: 42
+  MODEL_DTYPE: "bfloat16"  # use torch.bfloat16 if set to "bfloat16"
+  BF16_TRAINING: True
+  DATALOADER_NUM_WORKERS: 1
+  GRADIENT_CHECKPOINTING: True
+  USE_FLASH: True
+  DO_TRAIN: True
+  FREEZE_NON_EMBED: False
+ada_arguments: 
+  ADA_RATIO: 4
+  ADA_TOPK: 800
+  ADA_LOSS_WEIGHT: 0.1
+  ADA_MASK_WEIGHT: 10
+  ADA_TOPK_WEIGHT: 0.0001
+  ADA_ACT: False
+# train_script:  # TODO: add this to the launch config
+#   ENTRY_FILE: "train.py"
