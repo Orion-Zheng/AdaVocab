@@ -130,6 +130,7 @@ def main(args):
                     )
     dataset = Dataset.from_generator(partial(gen_from_iterable_dataset, const_dataset),
                                      num_proc=1)
+    print("Total Tokens in Dataset: ", len(dataset)*args.seq_num_token)
     dataset.save_to_disk(args.output_dir)
 
 if __name__ == "__main__":
