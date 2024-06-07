@@ -9,7 +9,6 @@ from dataclasses import dataclass, field, asdict
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union, Sequence
 
 from codebase.dist_logging import get_dist_logger
-from codebase.utils import GlobalConfig
 
 logger = get_dist_logger()
 excluded_keys = ['world_gpu_size', 'target_token_per_batch', 'max_token_per_seq']
