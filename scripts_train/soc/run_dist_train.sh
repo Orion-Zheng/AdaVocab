@@ -24,21 +24,6 @@ if [ ! -d "$SAVE_CONFIG_DIR" ]; then
 fi
 
 export GPU_PER_NODE=$(nvidia-smi -L | grep MIG | wc -l)  # MIG Devices per node
-if [ "$GPU_PER_NODE" -eq 0 ]; then
-    export GPU_PER_NODE=$(nvidia-smi -L | wc -l)  # GPUs per node
-    export WORLD_SIZE=$(($N_NODE * $GPU_PER_NODE))
-    DIST_LOG_DIR="${SAVE_CONFIG_DIR}/dist_output_log"
-    if [ ! -d "$DIST_LOG_DIR" ]; then
-        mkdir "$DIST_LOG_DIR"
-    fi
-else
-    export WORLD_SIZE=$(($N_NODE * $GPU_PER_NODE))
-    MIG_LOG_DIR="${SAVE_CONFIG_DIR}/mig_output_log"
-    if [ ! -d "$MIG_LOG_DIR" ]; then
-        mkdir "$MIG_LOG_DIR"
-    fi
-fi
-echo "WORLD_SIZE="$WORLD_SIZE
 
 # Set Default Config
 # Check if at least one argument is provided
@@ -57,6 +42,22 @@ else
     exit 1
 fi
 
+if [ "$GPU_PER_NODE" -eq 0 ]; then
+    export GPU_PER_NODE=$(nvidia-smi -L | wc -l)  # GPUs per node
+    export WORLD_SIZE=$(($N_NODE * $GPU_PER_NODE))
+    DIST_LOG_DIR="${SAVE_CONFIG_DIR}/dist_output_log"
+    if [ ! -d "$DIST_LOG_DIR" ]; then
+        mkdir "$DIST_LOG_DIR"
+    fi
+else
+    export WORLD_SIZE=$(($N_NODE * $GPU_PER_NODE))
+    MIG_LOG_DIR="${SAVE_CONFIG_DIR}/mig_output_log"
+    if [ ! -d "$MIG_LOG_DIR" ]; then
+        mkdir "$MIG_LOG_DIR"
+    fi
+fi
+echo "GPU_PER_NODE="$GPU_PER_NODE
+echo "WORLD_SIZE="$WORLD_SIZE
 # Add TimeStamp to Run Name and Output Dir for better tracking
 export TIMESTAMP=$(date +%Y-%m-%d-%H%M%S)
 export WANDB_RUN_NAME="${WANDB_RUN_NAME}-${TIMESTAMP}"
@@ -67,9 +68,21 @@ echo "Number of Nodes: " $N_NODE "; World Size: " $WORLD_SIZE
 echo "Main Host Address: "$MAIN_HOST "; NIC Name: " $DEFAULT_NIC_NAME "; Master Port: " $MASTER_PORT
 echo "Dispatching Accelerate Configs to All Nodes..."
 # =================== Set Dist Config ===================
-srun -N $N_NODE --ntasks-per-node=1 -w $NODE_LIST_COMMA bash scripts_train/soc/set_local_dist_config.sh
+if [ "$N_NODE" -eq 1 ]; then
+  echo "Running on Single Node..."
+  bash scripts_train/soc/setup_local_dist_config.sh
+else
+  echo "Running on Multiple Nodes..."
+  srun -N $N_NODE --ntasks-per-node=1 -w $NODE_LIST_COMMA bash scripts_train/soc/setup_local_dist_config.sh
+fi
 
 echo "Dispatching Training to All Nodes..."
-# =================== Run Multi-node Training ===================
-srun -N $N_NODE --ntasks-per-node=1 -w $NODE_LIST_COMMA bash scripts_train/soc/run_local_train.sh
+# =================== Run Dist Training ===================
+if [ "$N_NODE" -eq 1 ]; then
+  echo "Running on Single Node..."
+  bash scripts_train/soc/setup_local_train.sh
+else
+  echo "Running on Multiple Nodes..."
+  srun -N $N_NODE --ntasks-per-node=1 -w $NODE_LIST_COMMA bash scripts_train/soc/setup_local_train.sh
+fi
 wait

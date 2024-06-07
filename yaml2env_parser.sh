@@ -23,7 +23,7 @@ read_config_parameters() {
 }
 
 # Iterate over categories and export parameters as environment variables
-categories=("dist_arguments" "wandb_arguments" "model_arguments" "data_arguments" "output_arguments" "train_arguments"  "ada_arguments") 
+categories=("dist_arguments" "wandb_arguments" "model_arguments" "data_arguments" "output_arguments" "train_arguments"  "ada_arguments" "train_script") 
 
 for category in "${categories[@]}"; do
     # Read parameters from config file

@@ -1,3 +1,4 @@
+1. Prepare SFT Data
 ```
 python codebase/tools/data_prep/tokenize_dataset.py \
        --tokenizer ./original_models/tinyllama-chat \

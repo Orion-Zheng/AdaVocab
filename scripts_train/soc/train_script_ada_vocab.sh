@@ -1,0 +1,37 @@
+export TRAIN_SCRIPT="$ENTRY_FILE \
+              --run_name ${WANDB_RUN_NAME} \
+              --model_dir ${MODEL_DIR} \
+              --tokenizer_dir ${TOKENIZER_DIR} \
+              --train_data_dir ${TRAIN_DATA_DIR} \
+              --eval_data_dir ${EVAL_DATA_DIR} \
+              --output_dir ${OUTPUT_DIR} \
+              --gradient_accumulation_steps ${GRAD_ACC_STEP} \
+              --per_device_eval_batch_size ${PER_DEVICE_EVAL_BATCH_SIZE} \
+              --per_device_train_batch_size ${PER_DEVICE_TRAIN_BATCH_SIZE} \
+              --max_token_per_seq ${MAX_TOKEN_PER_SEQ} \
+              --eval_steps ${EVAL_STEPS} \
+              --save_steps ${SAVE_STEPS} \
+              --learning_rate ${LEARNING_RATE} \
+              --optim ${OPTIMIZER} --adam_beta1 ${ADAM_BETA1} --adam_beta2 ${ADAM_BETA2} \
+              --weight_decay ${WEIGHT_DECAY} \
+              --lr_scheduler_type ${LR_SCHEDULER_TYPE} \
+              --num_train_epochs ${NUM_TRAIN_EPOCHS} \
+              --warmup_steps ${WARMUP_STEPS} \
+              --seed ${SEED} \
+              --load_dtype ${MODEL_DTYPE} \
+              --dataloader_num_workers ${DATALOADER_NUM_WORKERS} \
+              --gradient_checkpointing ${GRADIENT_CHECKPOINTING} \
+              --max_grad_norm ${GRAD_CLIP} \
+              --use_flash ${USE_FLASH} \
+              --do_train ${DO_TRAIN} \
+              --bf16 ${BF16_TRAINING} \
+              --freeze_non_embed ${FREEZE_NON_EMBED} \
+              --ddp_backend ${DDP_BACKEND} \
+              --ADA_RATIO ${ADA_RATIO} \
+              --ADA_TOPK ${ADA_TOPK} \
+              --ADA_LOSS_WEIGHT ${ADA_LOSS_WEIGHT} \
+              --ADA_MASK_WEIGHT ${ADA_MASK_WEIGHT} \
+              --ADA_TOPK_WEIGHT ${ADA_TOPK_WEIGHT} \
+              --ADA_ACT ${ADA_ACT} \
+              "
+              #   --max_steps ${MAX_STEPS} \

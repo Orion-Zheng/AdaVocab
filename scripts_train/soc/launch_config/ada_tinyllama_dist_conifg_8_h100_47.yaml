@@ -5,7 +5,7 @@ dist_arguments:
   DDP_BACKEND: "gloo"
   # GLOO_SOCKET_IFNAME: "ens6f0np0"
   # GPU_PER_NODE: 2 # can override the automatic detection from `$(nvidia-smi -L | wc -l)` or `$(nvidia-smi -L | grep MIG | wc -l)`
-  # N_NODE: 2  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)`
+  # N_NODE: 1  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)`
   # MAIN_HOST: "xgpi16"  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)`
 wandb_arguments:
   WANDB_PROJECT: "New_Train_Test"
@@ -50,5 +50,6 @@ ada_arguments:
   ADA_MASK_WEIGHT: 10
   ADA_TOPK_WEIGHT: 0.0001
   ADA_ACT: False
-# train_script:  # TODO: add this to the launch config
-#   ENTRY_FILE: "train.py"
+train_script:
+  ENTRY_FILE: "adavocab_llama/train_adavocab.py"
+  LAUNCH_TEMPLATE: "scripts_train/soc/train_script_ada_vocab.sh"
