@@ -1,0 +1,48 @@
+# Each (machine configuration, model configuration) pair has a corresponding configuration file
+dist_arguments:
+  WORK_ABS_DIR: "/home/z/zheng22/AdaVocab"
+  ACCELERATE_CONFIG: "config/accelerate/general/multi_gpu_zero2_offload_template.yaml"
+  DDP_BACKEND: "gloo"
+  # GLOO_SOCKET_IFNAME: "ens6f0np0"
+  # GPU_PER_NODE: 2 # can override the automatic detection from `$(nvidia-smi -L | wc -l)` or `$(nvidia-smi -L | grep MIG | wc -l)`
+  # N_NODE: 2  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)`
+  # MAIN_HOST: "xgpi16"  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)`
+wandb_arguments:
+  WANDB_PROJECT: "AdaVocab_SFT"
+  WANDB_RUN_NAME: "Gemma-2b_sft_Wildchat-1M"
+model_arguments:
+  MODEL_DIR: "original_models/gemma-2b"
+  TOKENIZER_DIR: "original_models/gemma-2b"
+data_arguments:
+  TRAIN_DATA_DIR: "tokenized_datasets/wildchat-1M_gemma_2048_sft_split/train"  
+  EVAL_DATA_DIR: "tokenized_datasets/wildchat-1M_gemma_2048_sft_split/eval"
+output_arguments:
+  OUTPUT_DIR: "experiment_ckpts/gemma-2b_SFT"
+train_arguments:
+  PER_DEVICE_TRAIN_BATCH_SIZE: 16  # global batch size tokens = 256M (LLaMA-2)
+  PER_DEVICE_EVAL_BATCH_SIZE: 1
+  GRAD_ACC_STEP: 2
+  GRAD_CLIP: 1.0  # Follow Qwen techinical report
+  MAX_TOKEN_PER_SEQ: 2048
+  EVAL_STEPS: 100
+  SAVE_STEPS: 3000
+  LEARNING_RATE: 2e-5  # LLaMA-2
+  OPTIMIZER: "paged_adamw_32bit"  # LLaMA-2
+  ADAM_BETA1: 0.9  # LLaMA-2
+  ADAM_BETA2: 0.95  # LLaMA-2
+  WEIGHT_DECAY: 0.1  # LLaMA-2
+  LR_SCHEDULER_TYPE: "cosine"
+  NUM_TRAIN_EPOCHS: 2  # LLaMA-2
+  # MAX_STEPS: 10  # For debugging, will override NUM_TRAIN_EPOCHS
+  WARMUP_STEPS: 50
+  SEED: 42
+  MODEL_DTYPE: "bfloat16"  # use torch.bfloat16 if set to "bfloat16"
+  BF16_TRAINING: True
+  DATALOADER_NUM_WORKERS: 1
+  GRADIENT_CHECKPOINTING: True
+  USE_FLASH: True
+  DO_TRAIN: True
+  FREEZE_NON_EMBED: False
+train_script:  
+  ENTRY_FILE: "codebase/train_example.py"
+  LAUNCH_TEMPLATE: "scripts_train/soc/train_script_llm.sh"

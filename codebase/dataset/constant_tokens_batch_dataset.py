@@ -41,7 +41,7 @@ class ConstantTokenLengthDataset(IterableDataset):
         buffer_sequences=128,
         wrap_special_token=True,
         wrap_special_token_func=None,
-        # shuffle=True,
+        shuffle=False,
     ):
         self.dataset = dataset
         self.seq_num_token = seq_num_token
@@ -51,7 +51,8 @@ class ConstantTokenLengthDataset(IterableDataset):
         self.dataset_token_field = dataset_token_field
         self.wrap_special_token = wrap_special_token
         self.wrap_special_token_func = wrap_special_token_func
-        # self.shuffle = shuffle  # 这个真的不会影响性能吗？从curriculum的角度来讲，连续的内容应该连着学才对，打乱也应该在Dataset Example层面打乱，不应该在token之后的层面shuffle
+        # Shoudn't this shuffle affect the performance? From the perspective of curriculum, continuous content should be learned together, and shuffling should be done at the Dataset Example level, not at the token level
+        self.shuffle = shuffle  
 
     def __len__(self):
         # TODO: count real length
@@ -86,13 +87,16 @@ class ConstantTokenLengthDataset(IterableDataset):
                     token_buffer = input_ids.copy()
             if self.shuffle:
                 random.shuffle(examples)
-            for example in examples:
-                self.current_size += 1
-                yield {
-                    "input_ids": torch.LongTensor(example),
-                    "labels": torch.LongTensor(example),
-                }
-
+            try: 
+                for example in examples:
+                    self.current_size += 1
+                    yield {
+                        "input_ids": torch.LongTensor(example),
+                        "labels": torch.LongTensor(example),
+                    }
+            except TypeError:
+                print(example)
+                raise TypeError("Error when yielding examples")
 def test():
     tokenizer_path = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
@@ -119,7 +123,13 @@ def main(args):
     tokenizer_path = args.tokenizer
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     dataset = load_from_disk(args.source_dir)
-    wrap_data_func = lambda input_ids: [tokenizer.bos_token_id] + input_ids + [tokenizer.eos_token_id]
+    print("=== Packing Delimiters ===")
+    print("Add Bos: ", args.add_bos, "Add Eos: ", args.add_eos)
+    wrap_data_func = lambda input_ids: (
+        ([tokenizer.bos_token_id] if args.add_bos else []) +
+        input_ids +
+        ([tokenizer.eos_token_id] if args.add_eos else [])
+    )
     const_dataset = ConstantTokenLengthDataset(
                         dataset, 
                         dataset_token_field=args.token_field,

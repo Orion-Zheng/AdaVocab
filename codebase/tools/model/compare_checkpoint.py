@@ -1,5 +1,5 @@
 from transformers import AutoModelForCausalLM
-from adavocab_llama.ada_vocab_llama import AdaVocabLlamaForCausalLM
+from adavocab_llama.ada_vocab_factory import AdaVocabLlamaForCausalLM
 import torch
 
 # Two model must be compared at the correct precision. 

@@ -9,6 +9,8 @@ if __name__ == "__main__":
     parser.add_argument('--buffer_size', type=int, default=128, help="Number of examples in buffer when packing")
     parser.add_argument('--source_dir', type=str, required=True, help='Local directory to the source raw dataset')
     parser.add_argument('--output_dir', type=str, default='./tokenized_datasets', help='Output directory for tokenized dataset')
+    parser.add_argument('--add_bos', action='store_true', help='Add BOS token to each example')
+    parser.add_argument('--add_eos', action='store_true', help='Add EOS token to each example')
     args = parser.parse_args()
     main(args)
     

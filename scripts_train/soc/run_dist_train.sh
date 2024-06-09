@@ -4,7 +4,7 @@ export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
 
 # ACTIVATE YOUR PYTORCH ENV 
 source ~/.bashrc
-conda activate hf_gpu_dev
+conda activate hf_dev_2406
 
 # Obtain the default NIC Name
 DEFAULT_NIC_NAME=$(ip route show default | grep -Po '(?<=dev )(\S+)')

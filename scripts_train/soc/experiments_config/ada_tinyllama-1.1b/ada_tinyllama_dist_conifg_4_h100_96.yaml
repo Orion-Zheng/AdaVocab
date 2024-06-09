@@ -1,7 +1,7 @@
 # Each (machine configuration, model configuration) pair has a corresponding configuration file
 dist_arguments:
   WORK_ABS_DIR: "/home/z/zheng22/AdaVocab"
-  ACCELERATE_CONFIG: "config/accelerate/nscc/multi_node_template.yaml"
+  ACCELERATE_CONFIG: "config/accelerate/general/multi_node_template.yaml"
   DDP_BACKEND: "gloo"
   # GLOO_SOCKET_IFNAME: "ens6f0np0"
   # GPU_PER_NODE: 2 # can override the automatic detection from `$(nvidia-smi -L | wc -l)` or `$(nvidia-smi -L | grep MIG | wc -l)`
@@ -19,12 +19,12 @@ data_arguments:
 output_arguments:
   OUTPUT_DIR: "experiment_ckpts/New_Train_Test"
 train_arguments:
-  PER_DEVICE_TRAIN_BATCH_SIZE: 16  # For H100 47GB, tinyllama-chat 2048, 32 is the maximum batch size
+  PER_DEVICE_TRAIN_BATCH_SIZE: 32  # For H100 96GB, tinyllama-chat 2048, 32 is the maximum batch size
   PER_DEVICE_EVAL_BATCH_SIZE: 1
   GRAD_ACC_STEP: 4 
   GRAD_CLIP: 1.0
   MAX_TOKEN_PER_SEQ: 2048
-  EVAL_STEPS: 100
+  EVAL_STEPS: 10
   SAVE_STEPS: 1000
   LEARNING_RATE: 2e-4
   OPTIMIZER: "paged_adamw_32bit"
@@ -51,5 +51,5 @@ ada_arguments:
   ADA_TOPK_WEIGHT: 0.0001
   ADA_ACT: False
 train_script:
-  ENTRY_FILE: "adavocab_llama/train_adavocab.py"
+  ENTRY_FILE: "adavocab_llama/train_adavocab_llama.py"
   LAUNCH_TEMPLATE: "scripts_train/soc/train_script_ada_vocab.sh"

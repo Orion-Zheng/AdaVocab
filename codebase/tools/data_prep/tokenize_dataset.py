@@ -25,18 +25,22 @@ def gen_multi_turn_text(chat, tokenizer, split_role='assistant', split_each_turn
             output_text = sft_full[len(sft_prompt):]
             yield {'input': input_text, 'output': output_text}
 
-def tokenize_multi_turn_conv(chat, tokenizer, split_role='assistant', split_each_turns=True, IGNORE_INDEX=-100):
+def tokenize_multi_turn_conv(chat, tokenizer, IGNORE_INDEX, split_role='assistant', split_each_turns=True):
     all_turns_data = gen_multi_turn_text(chat, tokenizer, split_role=split_role, split_each_turns=split_each_turns)
     input_ids, labels = [], []
     for sample in all_turns_data:
         query_tokens = tokenizer(sample['input'], add_special_tokens=False)['input_ids'] 
         response_tokens = tokenizer(sample['output'], add_special_tokens=False)['input_ids']
         input_ids.extend(query_tokens + response_tokens)
-        labels.extend([IGNORE_INDEX]*len(query_tokens) + response_tokens)
+        if IGNORE_INDEX is None:  # Calculate loss on all tokens
+            labels.extend(query_tokens + response_tokens)
+        else:
+            labels.extend([IGNORE_INDEX]*len(query_tokens) + response_tokens)
     return {'input_ids': input_ids, 'labels': labels}
 
 def tokenize_sft(
-    data_point: Dict[str, str], tokenizer: LlamaTokenizer, conv_field='conversation', split_role='assistant', split_each_turns=True, IGNORE_INDEX=-100
+    data_point: Dict[str, str], tokenizer: LlamaTokenizer, 
+    conv_field='conversation', split_role='assistant', split_each_turns=True, IGNORE_INDEX=-100
 ) -> Dict[str, Union[int, str, List[int]]]:
     chat = data_point[conv_field]  # extract conversation from the data point
     return tokenize_multi_turn_conv(chat, tokenizer, split_role=split_role, split_each_turns=split_each_turns, IGNORE_INDEX=IGNORE_INDEX)
@@ -57,8 +61,11 @@ def tokenize_pretrain(
     labels = deepcopy(tokens)
     return {'input_ids': tokens, 'labels': labels}
 
-
 def main(args):
+    IGNORE_INDEX = -100
+    if args.sft_no_mask:
+        print('Chat template will be applied, but losses will be computed for all tokens in the conversation')
+        IGNORE_INDEX = None
     tokenizer_path = args.tokenizer
     dataset_dir = args.source_dir
     target_dir = args.output_dir
@@ -66,6 +73,8 @@ def main(args):
     output_dir = f'{target_dir}/{dataset_dir.split("/")[-1]}_{tokenizer_path.split("/")[-1]}'
     if args.sft:
         output_dir += '_sft'
+        if args.sft_no_mask:
+            output_dir += '_no_mask'
     else:
         output_dir += '_pretrain'
     num_proc = cpu_count() - 2 
@@ -80,7 +89,8 @@ def main(args):
         # make sure tokenizer_config.json has correct `chat_template` field
         dataset = dataset.map(
             function=tokenize_sft,
-            fn_kwargs={"tokenizer": tokenizer, "split_role": 'assistant', "split_each_turns": True},
+            fn_kwargs={"tokenizer": tokenizer, "split_role": 'assistant',
+                       "split_each_turns": True, "IGNORE_INDEX": IGNORE_INDEX},
             keep_in_memory=False,
             num_proc=num_proc,
         )
@@ -101,6 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('--split', type=str, default='train', help='Split of the dataset to tokenize')
     parser.add_argument('--output_dir', type=str, default='./tokenized_datasets', help='Output directory for tokenized dataset')
     parser.add_argument('--sft', action='store_true', help='Tokenize for SFT Dataset')
+    parser.add_argument('--sft_no_mask', action='store_true', help='Tokenize for SFT Dataset without masking the instruction part')
     args = parser.parse_args()
     main(args)
     
