@@ -2,10 +2,6 @@
 export 'PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True'
 export PYTHONPATH="${PYTHONPATH}:${SCRIPT_DIR}/../.."
 
-# ACTIVATE YOUR PYTORCH ENV 
-source ~/.bashrc
-conda activate hf_dev_2406
-
 # Obtain the default NIC Name
 DEFAULT_NIC_NAME=$(ip route show default | grep -Po '(?<=dev )(\S+)')
 export GLOO_SOCKET_IFNAME=$DEFAULT_NIC_NAME

@@ -10,4 +10,4 @@
 #SBATCH --mail-type=all    # Send email at begin and end of job
 source ~/.bashrc
 bash scripts_train/soc/run_dist_train.sh \
-     scripts_train/soc/experiments_config/sft_gemma-2b/gemma-2b_sft_conifg_4_h100_96.yaml
+     scripts_train/soc/experiments_config/sft_qwen2-1.5b/qwen2-1.5b_sft_conifg_4_h100_96.yaml

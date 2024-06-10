@@ -1,7 +1,7 @@
 # Each (machine configuration, model configuration) pair has a corresponding configuration file
 dist_arguments:
   WORK_ABS_DIR: "/home/z/zheng22/AdaVocab"
-  ACCELERATE_CONFIG: "config/accelerate/general/multi_gpu_zero2_offload_template.yaml"
+  ACCELERATE_CONFIG: "config/accelerate/general/multi_node_template.yaml"
   DDP_BACKEND: "gloo"
   # GLOO_SOCKET_IFNAME: "ens6f0np0"
   # GPU_PER_NODE: 2 # can override the automatic detection from `$(nvidia-smi -L | wc -l)` or `$(nvidia-smi -L | grep MIG | wc -l)`
@@ -19,9 +19,9 @@ data_arguments:
 output_arguments:
   OUTPUT_DIR: "experiment_ckpts/qwen2-1.5b_SFT"
 train_arguments:
-  PER_DEVICE_TRAIN_BATCH_SIZE: 16  # global batch size tokens = 256M (LLaMA-2)
+  PER_DEVICE_TRAIN_BATCH_SIZE: 8  # global batch size tokens = 256M (LLaMA-2)
+  GRAD_ACC_STEP: 4
   PER_DEVICE_EVAL_BATCH_SIZE: 1
-  GRAD_ACC_STEP: 2
   GRAD_CLIP: 1.0  # Follow Qwen techinical report
   MAX_TOKEN_PER_SEQ: 2048
   EVAL_STEPS: 100
