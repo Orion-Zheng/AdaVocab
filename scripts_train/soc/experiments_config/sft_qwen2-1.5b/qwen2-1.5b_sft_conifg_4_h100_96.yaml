@@ -19,7 +19,7 @@ data_arguments:
 output_arguments:
   OUTPUT_DIR: "experiment_ckpts/qwen2-1.5b_SFT"
 train_arguments:
-  PER_DEVICE_TRAIN_BATCH_SIZE: 8  # global batch size tokens = 256M (LLaMA-2)
+  PER_DEVICE_TRAIN_BATCH_SIZE: 8  # global batch size tokens = 256K (LLaMA-2)
   GRAD_ACC_STEP: 4
   PER_DEVICE_EVAL_BATCH_SIZE: 1
   GRAD_CLIP: 1.0  # Follow Qwen techinical report
