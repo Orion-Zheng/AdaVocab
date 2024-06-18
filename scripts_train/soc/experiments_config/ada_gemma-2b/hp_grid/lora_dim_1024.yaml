@@ -1,0 +1,6 @@
+dist_arguments:
+  ACCELERATE_CONFIG: "config/accelerate/general/one_node_multi_gpu_zero2_offload.yaml"
+wandb_arguments:
+  WANDB_RUN_NAME: "Ada_Gemma-2b-ep2-FT_lora_1024"
+ada_arguments:
+  ADA_DIM: 1024

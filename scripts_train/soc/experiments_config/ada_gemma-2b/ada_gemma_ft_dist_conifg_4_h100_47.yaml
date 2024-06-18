@@ -1,31 +1,31 @@
 # Each (machine configuration, model configuration) pair has a corresponding configuration file
 dist_arguments:
   WORK_ABS_DIR: "/home/z/zheng22/AdaVocab"
-  ACCELERATE_CONFIG: "config/accelerate/general/multi_node_template.yaml"
+  ACCELERATE_CONFIG: "config/accelerate/general/multi_node_zero2_offload_template.yaml"
   DDP_BACKEND: "gloo"
   # GLOO_SOCKET_IFNAME: "ens6f0np0"
   # GPU_PER_NODE: 2 # can override the automatic detection from `$(nvidia-smi -L | wc -l)` or `$(nvidia-smi -L | grep MIG | wc -l)`
   # N_NODE: 1  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | wc -l)`
   # MAIN_HOST: "xgpi16"  # can override the automatic detection from `$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)`
 wandb_arguments:
-  WANDB_PROJECT: "New_Train_Test"
-  WANDB_RUN_NAME: "default"
+  WANDB_PROJECT: "AdaVocab_WildChat-1M_240617"
+  WANDB_RUN_NAME: "Ada_Gemma-2b-ep2-FT"
 model_arguments:
-  MODEL_DIR: "original_models/tinyllama-chat"
-  TOKENIZER_DIR: "original_models/tinyllama-chat"
+  MODEL_DIR: "experiment_ckpts/gemma-2b_SFT-2024-06-10-123619/checkpoint-11592"
+  TOKENIZER_DIR: "experiment_ckpts/gemma-2b_SFT-2024-06-10-123619/checkpoint-11592"
 data_arguments:
-  TRAIN_DATA_DIR: "tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/train"  
-  EVAL_DATA_DIR: "tokenized_datasets/wildchat_1M_tinyllama-chat_2048_ft_split/eval"
+  TRAIN_DATA_DIR: "tokenized_datasets/wildchat-1M_gemma_2048_sft_no_mask_split/train"  
+  EVAL_DATA_DIR: "tokenized_datasets/wildchat-1M_gemma_2048_sft_no_mask_split/eval"
 output_arguments:
-  OUTPUT_DIR: "experiment_ckpts/New_Train_Test"
+  OUTPUT_DIR: "experiment_ckpts/Ada_Gemma-2b-FT"
 train_arguments:
-  PER_DEVICE_TRAIN_BATCH_SIZE: 32
+  PER_DEVICE_TRAIN_BATCH_SIZE: 2
   PER_DEVICE_EVAL_BATCH_SIZE: 1
-  GRAD_ACC_STEP: 8
+  GRAD_ACC_STEP: 64
   GRAD_CLIP: 1.0
   MAX_TOKEN_PER_SEQ: 2048
-  EVAL_STEPS: 10
-  SAVE_STEPS: 1000
+  EVAL_STEPS: 100
+  SAVE_STEPS: 2000  # don't need intermediate checkpoints, just save final ckpt
   LEARNING_RATE: 2e-4
   OPTIMIZER: "paged_adamw_32bit"
   ADAM_BETA1: 0.9
@@ -44,12 +44,14 @@ train_arguments:
   DO_TRAIN: True
   FREEZE_NON_EMBED: False
 ada_arguments: 
-  ADA_RATIO: 4
-  ADA_TOPK: 800
+  ADA_DIM: 512
+  ADA_TOPK: 1024
   ADA_LOSS_WEIGHT: 0.1
   ADA_MASK_WEIGHT: 10
   ADA_TOPK_WEIGHT: 0.0001
   ADA_ACT: False
+  ADA_DORA: False
+  ADA_SVD: False
 train_script:
-  ENTRY_FILE: "adavocab_llama/train_adavocab_llama.py"
+  ENTRY_FILE: "adavocab_llama/train_adavocab_gemma.py"
   LAUNCH_TEMPLATE: "scripts_train/soc/train_script_ada_vocab.sh"

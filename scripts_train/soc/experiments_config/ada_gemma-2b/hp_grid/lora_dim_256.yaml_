@@ -1,0 +1,4 @@
+wandb_arguments:
+  WANDB_RUN_NAME: "Ada_Gemma-2b-ep2-FT_lora_256"
+ada_arguments:
+  ADA_DIM: 256

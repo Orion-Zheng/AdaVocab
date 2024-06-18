@@ -40,15 +40,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_template', type=str, help='default accelerate config')
     parser.add_argument('--global_rank', type=str, help='Global GPU Rank')
-    parser.add_argument('--main_proc_ip', type=str, help='IP Address of the main host.')
-    parser.add_argument('--main_proc_port', type=str, help='communication port of the main process')
+    parser.add_argument('--main_proc_ip', default=None, type=str, help='IP Address of the main host.')
+    parser.add_argument('--main_proc_port', default=None, type=str, help='communication port of the main process')
     parser.add_argument('--n_node', type=str, help='Number of nodes')
     parser.add_argument('--world_size', type=str, help='World GPU Size')
     parser.add_argument('--local_save_path', default='my_config.yaml', type=str, help='default accelerate config')
     args = parser.parse_args()
     
     main_ip = args.main_proc_ip
-    main_port = int(args.main_proc_port)
+    main_port = int(args.main_proc_port) if args.main_proc_port is not None else None
 
     global_rank = int(args.global_rank)
     n_node = int(args.n_node)
@@ -58,12 +58,14 @@ def main():
     local_save_path = args.local_save_path
 
     modifications = {
-        'main_process_ip': main_ip,
-        'main_process_port': main_port,
-        'machine_rank': global_rank,
-        'num_machines': n_node,
+        'machine_rank': global_rank,  
+        'num_machines': n_node,  
         'num_processes': world_size
     }
+    if main_ip is not None:
+        modifications['main_process_ip'] = main_ip
+    if main_port is not None:
+        modifications['main_process_port'] = main_port
     hostname = socket.gethostname()
     print(f"Host: {hostname} \n Modifications: {modifications}")
 

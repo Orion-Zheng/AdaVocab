@@ -27,11 +27,13 @@ export TRAIN_SCRIPT="$ENTRY_FILE \
               --bf16 ${BF16_TRAINING} \
               --freeze_non_embed ${FREEZE_NON_EMBED} \
               --ddp_backend ${DDP_BACKEND} \
-              --ADA_RATIO ${ADA_RATIO} \
+              --ADA_DIM ${ADA_DIM} \
               --ADA_TOPK ${ADA_TOPK} \
               --ADA_LOSS_WEIGHT ${ADA_LOSS_WEIGHT} \
               --ADA_MASK_WEIGHT ${ADA_MASK_WEIGHT} \
               --ADA_TOPK_WEIGHT ${ADA_TOPK_WEIGHT} \
               --ADA_ACT ${ADA_ACT} \
+              --ADA_DORA ${ADA_DORA} \
+              --ADA_SVD ${ADA_SVD} \
               "
               #   --max_steps ${MAX_STEPS} \

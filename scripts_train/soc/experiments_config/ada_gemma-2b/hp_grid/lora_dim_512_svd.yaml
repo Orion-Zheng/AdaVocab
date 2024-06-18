@@ -1,0 +1,5 @@
+wandb_arguments:
+  WANDB_RUN_NAME: "Ada_Gemma-2b-ep2-FT_lora_svd_512"
+ada_arguments:
+  ADA_DIM: 512
+  ADA_SVD: True

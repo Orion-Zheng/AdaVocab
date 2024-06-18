@@ -1,0 +1,4 @@
+wandb_arguments:
+  WANDB_RUN_NAME: "Ada_Qwen2-1.5b-ep2-FT_lora_384"
+ada_arguments:
+  ADA_DIM: 384

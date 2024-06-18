@@ -44,12 +44,14 @@ train_arguments:
   DO_TRAIN: True
   FREEZE_NON_EMBED: False
 ada_arguments: 
-  ADA_RATIO: 4
+  ADA_DIM: 512
   ADA_TOPK: 800
   ADA_LOSS_WEIGHT: 0.1
   ADA_MASK_WEIGHT: 10
   ADA_TOPK_WEIGHT: 0.0001
   ADA_ACT: False
+  ADA_DORA: False
+  ADA_SVD: False
 train_script:
   ENTRY_FILE: "adavocab_llama/train_adavocab_llama.py"
   LAUNCH_TEMPLATE: "scripts_train/soc/train_script_ada_vocab.sh"
